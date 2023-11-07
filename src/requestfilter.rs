@@ -223,7 +223,7 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                         request_filter.tags.push(id);
                     }
                 }
-                "unit_tyoe" => request_filter.unit_type = value.to_string(),
+                "unit_type" => request_filter.unit_type = value.to_string(),
                 _ => (),
             },
             _ => return Err(String::from("error extracting request query parameters")),
@@ -285,7 +285,7 @@ mod tests {
         &supplier=10\
         &symbols=1,2,3\
         &tags=1,2,3\
-        &unit_tyoe=foo",
+        &unit_type=foo",
         );
 
         assert_eq!(filter.clone().unwrap().search, "foo");
@@ -328,53 +328,85 @@ mod tests {
         assert_eq!(filter.clone().unwrap().supplier, 10);
         assert_eq!(filter.clone().unwrap().symbols, vec![1, 2, 3]);
         assert_eq!(filter.clone().unwrap().tags, vec![1, 2, 3]);
-        assert_eq!(filter.clone().unwrap().unit_tyoe, "foo");
+        assert_eq!(filter.clone().unwrap().unit_type, "foo");
 
         // Invalid values.
-        // offset not digit
-        let filter = request_filter("http://localhost/?offset=ab");
-        assert!(filter.is_err());
+        let param_int = vec![
+            "offset",
+            "limit",
+            "cas_number",
+            "category",
+            "empirical_formula",
+            "entity",
+            "name",
+            "producer",
+            "producer_ref",
+            "product",
+            "signal_word",
+            "storage",
+            "store_location",
+            "supplier",
+        ];
+        // let param_string = vec![
+        //     "search",
+        //     "order_by",
+        //     "order",
+        //     "custom_name_part_of",
+        //     "permission",
+        //     "product_specificity",
+        //     "storage_barecode",
+        //     "storage_batch_number",
+        //     "unit_type",
+        // ];
+        let param_bool = vec![
+            "bookmark",
+            "borrowing",
+            "cas_number_cmr",
+            "history",
+            "show_bio",
+            "show_chem",
+            "show_consu",
+            "storage_archive",
+            "storage_to_destroy",
+            "store_location_can_store",
+        ];
+        let param_vec_int = vec![
+            "hazard_statements",
+            "storages",
+            "precautionary_statements",
+            "symbols",
+            "tags",
+        ];
 
-        // limit not digit
-        let filter = request_filter("http://localhost/?limit=ab");
-        assert!(filter.is_err());
+        for param in param_int {
+            // test not digit
+            let filter = request_filter(&format!("http://localhost/?{param}=ab"));
+            assert!(filter.is_err());
+        }
 
-        // bookmark not bool
-        let filter = request_filter("http://localhost/?bookmark=ab");
-        assert!(filter.is_err());
+        for param in param_bool {
+            // test not bool
+            let filter = request_filter(&format!("http://localhost/?{param}=ab"));
+            assert!(filter.is_err());
+        }
 
-        // borrowing not bool
-        let filter = request_filter("http://localhost/?borrowing=ab");
-        assert!(filter.is_err());
+        // for param in param_string {
+        //     // test empty string
+        //     let filter = request_filter(&format!("http://localhost/?{param}="));
+        //     assert!(filter.is_err());
+        // }
 
-        // cas_number not digit
-        let filter = request_filter("http://localhost/?cas_number=ab");
-        assert!(filter.is_err());
+        for param in param_vec_int {
+            // test not digit
+            let filter = request_filter(&format!("http://localhost/?{param}=A"));
+            assert!(filter.is_err());
 
-        // cas_number_cmr not bool
-        let filter = request_filter("http://localhost/?cas_number_cmr=ab");
-        assert!(filter.is_err());
+            let filter = request_filter(&format!("http://localhost/?{param}=1,2,A"));
+            assert!(filter.is_err());
 
-        // category not digit
-        let filter = request_filter("http://localhost/?category=ab");
-        assert!(filter.is_err());
-
-        // empirical_formula not digit
-        let filter = request_filter("http://localhost/?empirical_formula=ab");
-        assert!(filter.is_err());
-
-        // entity not digit
-        let filter = request_filter("http://localhost/?entity=ab");
-        assert!(filter.is_err());
-
-        // hazard_statements not digit
-        let filter = request_filter("http://localhost/?hazard_statements=1,2,A");
-        assert!(filter.is_err());
-        // hazard_statements empty
-        let filter = request_filter("http://localhost/?hazard_statements=");
-
-        //FIXME: more tests.
-
-        assert!(filter.is_err());
+            // test wrong separator
+            let filter = request_filter(&format!("http://localhost/?{param}=1;2"));
+            assert!(filter.is_err());
+        }
     }
 }
