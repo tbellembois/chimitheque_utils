@@ -1,5 +1,11 @@
+use futures::executor::block_on;
+use governor::{
+    clock,
+    middleware::NoOpMiddleware,
+    state::{InMemoryState, NotKeyed},
+    RateLimiter,
+};
 use log::debug;
-
 use serde::Deserialize;
 use urlencoding::encode;
 
@@ -56,10 +62,15 @@ pub struct Compounds {
     pc_compounds: Vec<PCCompound>,
 }
 
-pub fn autocomplete(search: &str) -> Result<Autocomplete, String> {
+pub fn autocomplete(
+    rate_limiter: &RateLimiter<NotKeyed, InMemoryState, clock::DefaultClock, NoOpMiddleware>,
+    search: &str,
+) -> Result<Autocomplete, String> {
     let urlencoded_search = encode(search);
 
     // Call NCBI REST API.
+    block_on(rate_limiter.until_ready());
+
     let resp = match reqwest::blocking::get(format!(
         "https://pubchem.ncbi.nlm.nih.gov/rest/autocomplete/compound/{urlencoded_search}/json",
     )) {
@@ -92,10 +103,15 @@ pub fn autocomplete(search: &str) -> Result<Autocomplete, String> {
     Ok(autocomplete)
 }
 
-pub fn get_compound_by_name(name: &str) -> Result<Compounds, String> {
+pub fn get_compound_by_name(
+    rate_limiter: &RateLimiter<NotKeyed, InMemoryState, clock::DefaultClock, NoOpMiddleware>,
+    name: &str,
+) -> Result<Compounds, String> {
     let urlencoded_name = encode(name);
 
     // Call NCBI REST API.
+    block_on(rate_limiter.until_ready());
+
     let resp = match reqwest::blocking::get(format!(
         "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{urlencoded_name}/JSON",
     )) {
@@ -131,6 +147,9 @@ pub fn get_compound_by_name(name: &str) -> Result<Compounds, String> {
 #[cfg(test)]
 mod tests {
 
+    use std::{num::NonZeroU32, time::SystemTime};
+
+    use governor::{Quota, RateLimiter};
     use log::info;
 
     use super::*;
@@ -143,30 +162,63 @@ mod tests {
     fn test_autocomplete() {
         init_logger();
 
-        info!("aspirine: {:?}", autocomplete("aspirine").unwrap());
+        let rate_limiter = RateLimiter::direct(Quota::per_second(NonZeroU32::new(5).unwrap()));
+
+        info!(
+            "aspirine: {:?}",
+            autocomplete(&rate_limiter, "aspirine").unwrap()
+        );
         info!(
             "DIACETYL-L-TARTARIC ANHYDRIDE: {:?}",
-            autocomplete("DIACETYL-L-TARTARIC ANHYDRIDE").unwrap()
+            autocomplete(&rate_limiter, "DIACETYL-L-TARTARIC ANHYDRIDE").unwrap()
         );
-        info!("#: {:?}", autocomplete("#").unwrap());
+        info!("#: {:?}", autocomplete(&rate_limiter, "#").unwrap());
     }
 
     #[test]
     fn test_get_compound_by_name() {
         init_logger();
 
-        info!("aspirine: {:?}", get_compound_by_name("aspirine"));
+        let rate_limiter = RateLimiter::direct(Quota::per_second(NonZeroU32::new(5).unwrap()));
+
+        info!(
+            "aspirine: {:?}",
+            get_compound_by_name(&rate_limiter, "aspirine")
+        );
         info!(
             "D-Diacetyltartaric anhydride: {:?}",
-            get_compound_by_name("D-Diacetyltartaric anhydride").unwrap()
+            get_compound_by_name(&rate_limiter, "D-Diacetyltartaric anhydride").unwrap()
         );
         info!(
             "(-)-Diacetyl-D-tartaric Anhydride: {:?}",
-            get_compound_by_name("(-)-Diacetyl-D-tartaric Anhydride").unwrap()
+            get_compound_by_name(&rate_limiter, "(-)-Diacetyl-D-tartaric Anhydride").unwrap()
         );
         info!(
             "(+)-Diacetyl-L-tartaric anhydride: {:?}",
-            get_compound_by_name("(+)-Diacetyl-L-tartaric anhydride").unwrap()
+            get_compound_by_name(&rate_limiter, "(+)-Diacetyl-L-tartaric anhydride").unwrap()
         );
+    }
+
+    #[test]
+    fn test_time_limiter() {
+        init_logger();
+
+        let rate_limiter = RateLimiter::direct(Quota::per_second(NonZeroU32::new(1).unwrap()));
+
+        let before = SystemTime::now();
+        for i in 1..6 {
+            debug!("loop {i}");
+            let _ = autocomplete(&rate_limiter, "aspirine");
+        }
+        debug!("{:?}", before.elapsed());
+        assert!(before.elapsed().unwrap().as_secs() >= 5);
+
+        let before = SystemTime::now();
+        for i in 1..6 {
+            debug!("loop {i}");
+            let _ = get_compound_by_name(&rate_limiter, "aspirine");
+        }
+        debug!("{:?}", before.elapsed());
+        assert!(before.elapsed().unwrap().as_secs() >= 5);
     }
 }
