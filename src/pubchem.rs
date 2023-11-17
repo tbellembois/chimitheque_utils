@@ -6,15 +6,15 @@ use governor::{
     RateLimiter,
 };
 use log::debug;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use urlencoding::encode;
 
-#[derive(Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct AutocompleteTerm {
     compound: Vec<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Autocomplete {
     total: usize,
 
@@ -22,7 +22,7 @@ pub struct Autocomplete {
     dictionary_terms: AutocompleteTerm,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename = "Prop_value")]
 enum PropValue {
     #[serde(rename = "ival")]
@@ -35,7 +35,7 @@ enum PropValue {
     Sval(String),
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename = "Prop_URN")]
 pub struct PropURN {
     label: String,
@@ -44,19 +44,19 @@ pub struct PropURN {
     name: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Prop {
     urn: PropURN,
     value: PropValue,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename = "PC_Compound")]
 pub struct PCCompound {
     props: Vec<Prop>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Compounds {
     #[serde(rename = "PC_Compounds")]
     pc_compounds: Vec<PCCompound>,
