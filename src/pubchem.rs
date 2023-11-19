@@ -51,8 +51,19 @@ pub struct Prop {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct CID {
+    cid: usize,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ID {
+    id: CID,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename = "PC_Compound")]
 pub struct PCCompound {
+    id: ID,
     props: Vec<Prop>,
 }
 
