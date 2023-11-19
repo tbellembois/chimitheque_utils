@@ -1,3 +1,6 @@
+use std::io::Cursor;
+
+use base64::{engine::general_purpose, Engine};
 use futures::executor::block_on;
 use governor::{
     clock,
@@ -71,6 +74,8 @@ pub struct PCCompound {
 pub struct Compounds {
     #[serde(rename = "PC_Compounds")]
     pc_compounds: Vec<PCCompound>,
+    #[serde(default)]
+    base64_png: String,
 }
 
 pub fn autocomplete(
@@ -93,8 +98,7 @@ pub fn autocomplete(
 
     // Check HTTP code.
     if !resp.status().is_success() {
-        // FIXME
-        return Err("TODO".to_string());
+        return Err(resp.status().to_string());
     }
 
     // Get response body.
@@ -120,7 +124,7 @@ pub fn get_compound_by_name(
 ) -> Result<Compounds, String> {
     let urlencoded_name = encode(name);
 
-    // Call NCBI REST API.
+    // Call NCBI REST API for JSON.
     block_on(rate_limiter.until_ready());
 
     let resp = match reqwest::blocking::get(format!(
@@ -134,8 +138,7 @@ pub fn get_compound_by_name(
 
     // Check HTTP code.
     if !resp.status().is_success() {
-        // FIXME
-        return Err("TODO".to_string());
+        return Err(resp.status().to_string());
     }
 
     // Get response body.
@@ -147,10 +150,52 @@ pub fn get_compound_by_name(
     debug!("body_text: {:?}", body_text);
 
     // Unmarshall into JSON.
-    let compounds: Compounds = match serde_json::from_str(&body_text.to_owned()) {
+    let mut compounds: Compounds = match serde_json::from_str(&body_text.to_owned()) {
         Ok(compounds) => compounds,
         Err(e) => return Err(e.to_string()),
     };
+
+    // Call NCBI REST API for png.
+    block_on(rate_limiter.until_ready());
+
+    let resp = match reqwest::blocking::get(format!(
+        "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{urlencoded_name}/PNG?image_size=300x300",
+    )) {
+        Ok(resp) => resp,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    // Check HTTP code.
+    if !resp.status().is_success() {
+        return Err(resp.status().to_string());
+    }
+
+    // Get response body.
+    let body_bytes = match resp.bytes() {
+        Ok(body_bytes) => body_bytes,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    debug!("{:?}", body_bytes);
+
+    // Create image.
+    let image = match image::load_from_memory_with_format(&body_bytes, image::ImageFormat::Png) {
+        Ok(image) => image,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    // Convert to base64.
+    let mut image_data: Vec<u8> = Vec::new();
+    if let Err(e) = image.write_to(
+        &mut Cursor::new(&mut image_data),
+        image::ImageOutputFormat::Png,
+    ) {
+        return Err(e.to_string());
+    }
+    let res_base64 = general_purpose::STANDARD.encode(&image_data);
+
+    // Update the result.
+    compounds.base64_png = res_base64;
 
     Ok(compounds)
 }
@@ -221,7 +266,7 @@ mod tests {
             debug!("loop {i}");
             let _ = autocomplete(&rate_limiter, "aspirine");
         }
-        debug!("{:?}", before.elapsed());
+        info!("{:?}", before.elapsed());
         assert!(before.elapsed().unwrap().as_secs() >= 5);
 
         let before = SystemTime::now();
@@ -229,7 +274,7 @@ mod tests {
             debug!("loop {i}");
             let _ = get_compound_by_name(&rate_limiter, "aspirine");
         }
-        debug!("{:?}", before.elapsed());
+        info!("{:?}", before.elapsed());
         assert!(before.elapsed().unwrap().as_secs() >= 5);
     }
 }
