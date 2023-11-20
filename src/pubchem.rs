@@ -71,39 +71,129 @@ pub struct ID {
 pub struct Section {
     #[serde(rename = "TOCHeading")]
     toc_heading: String,
+
     #[serde(rename = "TOCCID")]
     toc_cid: isize,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Description")]
     description: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "URL")]
     url: Option<String>,
+
     #[serde(rename = "Section")]
     section: Box<Section>,
+
     #[serde(rename = "Information")]
     information: Box<Information>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct StringWithMarkup {
+    #[serde(rename = "String")]
+    string: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Markup")]
+    markup: Option<Vec<Markup>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Markup {
+    #[serde(rename = "Start")]
+    start: f64,
+
+    #[serde(rename = "Length")]
+    length: f64,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "URL")]
+    url: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Type")]
+    the_type: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Extra")]
+    extra: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Value {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Number")]
+    number: Option<Vec<f64>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "DateISO8601")]
+    date_iso_8601: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Boolean")]
+    boolean: Option<Vec<bool>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Binary")]
+    binary: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "BinaryToStore")]
+    binary_to_store: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ExternalDataURL")]
+    external_data_url: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ExternalTableName")]
+    external_table_name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Unit")]
+    unit: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "MimeType")]
+    mime_type: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "ExternalTableNumRows")]
+    external_table_num_rows: Option<isize>,
+
+    #[serde(rename = "StringWithMarkup")]
+    string_with_markup: Vec<StringWithMarkup>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Information {
     #[serde(rename = "ReferenceNumber")]
     reference_number: isize,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Name")]
     name: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Description")]
     description: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Reference")]
     reference: Option<Vec<String>>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "LicenseNote")]
     license_note: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "LicenseURL")]
     license_url: Option<String>,
+
+    #[serde(rename = "Value")]
+    value: Value,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -111,21 +201,27 @@ pub struct Record {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordType")]
     record_type: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordNumber")]
     record_number: Option<usize>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordAccession")]
     record_accession: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordTitle")]
     record_title: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordExternalURL")]
     record_external_url: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Section")]
     section: Option<Vec<Section>>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Information")]
     information: Option<Vec<Information>>,
