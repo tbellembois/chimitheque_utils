@@ -73,12 +73,37 @@ pub struct Section {
     toc_heading: String,
     #[serde(rename = "TOCCID")]
     toc_cid: isize,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Description")]
-    description: String,
+    description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "URL")]
-    url: String,
+    url: Option<String>,
     #[serde(rename = "Section")]
     section: Box<Section>,
+    #[serde(rename = "Information")]
+    information: Box<Information>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Information {
+    #[serde(rename = "ReferenceNumber")]
+    reference_number: isize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Name")]
+    name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Description")]
+    description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Reference")]
+    reference: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "LicenseNote")]
+    license_note: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "LicenseURL")]
+    license_url: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Default)]
@@ -101,6 +126,9 @@ pub struct Record {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Section")]
     section: Option<Vec<Section>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Information")]
+    information: Option<Vec<Information>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
