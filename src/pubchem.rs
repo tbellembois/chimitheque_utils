@@ -77,7 +77,7 @@ pub struct Section {
     description: String,
     #[serde(rename = "URL")]
     url: String,
-    #[serde(rename = "section")]
+    #[serde(rename = "Section")]
     section: Box<Section>,
 }
 
