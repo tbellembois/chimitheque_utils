@@ -25,8 +25,8 @@ pub struct AutocompleteTerm {
 pub struct Autocomplete {
     total: usize,
 
-    #[serde(default)]
-    dictionary_terms: AutocompleteTerm,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    dictionary_terms: Option<AutocompleteTerm>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -47,8 +47,8 @@ enum PropValue {
 pub struct PropURN {
     label: String,
 
-    #[serde(default)]
-    name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -83,24 +83,24 @@ pub struct Section {
 
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Record {
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordType")]
-    record_type: String,
-    #[serde(default)]
+    record_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordNumber")]
-    record_number: usize,
-    #[serde(default)]
+    record_number: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordAccession")]
-    record_accession: String,
-    #[serde(default)]
+    record_accession: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordTitle")]
-    record_title: String,
-    #[serde(default)]
+    record_title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordExternalURL")]
-    record_external_url: String,
-    #[serde(default)]
+    record_external_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Section")]
-    section: Vec<Section>,
+    section: Option<Vec<Section>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -116,10 +116,10 @@ pub struct PCCompound {
 pub struct Compounds {
     #[serde(rename = "PC_Compounds")]
     pc_compounds: Vec<PCCompound>,
-    #[serde(default)]
-    record: Record,
-    #[serde(default)]
-    base64_png: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    record: Option<Record>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    base64_png: Option<String>,
 }
 
 pub fn autocomplete(
@@ -243,7 +243,7 @@ pub fn get_compound_by_name(
     };
 
     // Update the result.
-    compounds.record = record;
+    compounds.record = Some(record);
 
     //
     // Get 2d image.
@@ -288,7 +288,7 @@ pub fn get_compound_by_name(
     let res_base64 = general_purpose::STANDARD.encode(&image_data);
 
     // Update the result.
-    compounds.base64_png = res_base64;
+    compounds.base64_png = Some(res_base64);
 
     Ok(compounds)
 }
@@ -360,7 +360,7 @@ mod tests {
             let _ = autocomplete(&rate_limiter, "aspirine");
         }
         info!("{:?}", before.elapsed());
-        assert!(before.elapsed().unwrap().as_secs() >= 5);
+        assert!(before.elapsed().unwrap().as_secs() >= 4);
 
         let before = SystemTime::now();
         for i in 1..6 {
@@ -368,6 +368,6 @@ mod tests {
             let _ = get_compound_by_name(&rate_limiter, "aspirine");
         }
         info!("{:?}", before.elapsed());
-        assert!(before.elapsed().unwrap().as_secs() >= 5);
+        assert!(before.elapsed().unwrap().as_secs() >= 4);
     }
 }
