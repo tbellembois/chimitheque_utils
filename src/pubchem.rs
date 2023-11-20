@@ -12,6 +12,10 @@ use log::debug;
 use serde::{Deserialize, Serialize};
 use urlencoding::encode;
 
+// XML shema available at:
+// https://pubchem.ncbi.nlm.nih.gov/pug_rest/pug_rest.xsd
+// https://pubchem.ncbi.nlm.nih.gov/pug_view/pug_view.xsd
+
 #[derive(Serialize, Deserialize, Debug, Default)]
 pub struct AutocompleteTerm {
     compound: Vec<String>,
@@ -64,16 +68,56 @@ pub struct ID {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct Section {
+    #[serde(rename = "TOCHeading")]
+    toc_heading: String,
+    #[serde(rename = "TOCCID")]
+    toc_cid: isize,
+    #[serde(rename = "Description")]
+    description: String,
+    #[serde(rename = "URL")]
+    url: String,
+    #[serde(rename = "section")]
+    section: Box<Section>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub struct Record {
+    #[serde(default)]
+    #[serde(rename = "RecordType")]
+    record_type: String,
+    #[serde(default)]
+    #[serde(rename = "RecordNumber")]
+    record_number: usize,
+    #[serde(default)]
+    #[serde(rename = "RecordAccession")]
+    record_accession: String,
+    #[serde(default)]
+    #[serde(rename = "RecordTitle")]
+    record_title: String,
+    #[serde(default)]
+    #[serde(rename = "RecordExternalURL")]
+    record_external_url: String,
+    #[serde(default)]
+    #[serde(rename = "Section")]
+    section: Vec<Section>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename = "PC_Compound")]
 pub struct PCCompound {
     id: ID,
     props: Vec<Prop>,
+    #[serde(default)]
+    record: Record,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Compounds {
     #[serde(rename = "PC_Compounds")]
     pc_compounds: Vec<PCCompound>,
+    #[serde(default)]
+    record: Record,
     #[serde(default)]
     base64_png: String,
 }
@@ -124,6 +168,9 @@ pub fn get_compound_by_name(
 ) -> Result<Compounds, String> {
     let urlencoded_name = encode(name);
 
+    //
+    // Get basic informations.
+    //
     // Call NCBI REST API for JSON.
     block_on(rate_limiter.until_ready());
 
@@ -155,6 +202,52 @@ pub fn get_compound_by_name(
         Err(e) => return Err(e.to_string()),
     };
 
+    // Extract compound cid.
+    let compound_cid = match compounds.pc_compounds.get(0) {
+        Some(compound_cid) => compound_cid.id.id.cid,
+        None => return Err("can not find compound cid".to_string()),
+    };
+
+    //
+    // Get detailed informations.
+    //
+    // Call NCBI REST API for JSON.
+    block_on(rate_limiter.until_ready());
+
+    let resp = match reqwest::blocking::get(format!(
+        "https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/{compound_cid}/JSON",
+    )) {
+        Ok(resp) => resp,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    debug!("resp: {:#?}", resp);
+
+    // Check HTTP code.
+    if !resp.status().is_success() {
+        return Err(resp.status().to_string());
+    }
+
+    // Get response body.
+    let body_text = match resp.text() {
+        Ok(body_text) => body_text,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    debug!("body_text: {:?}", body_text);
+
+    // Unmarshall into JSON.
+    let record: Record = match serde_json::from_str(&body_text.to_owned()) {
+        Ok(compounds) => compounds,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    // Update the result.
+    compounds.record = record;
+
+    //
+    // Get 2d image.
+    //
     // Call NCBI REST API for png.
     block_on(rate_limiter.until_ready());
 
