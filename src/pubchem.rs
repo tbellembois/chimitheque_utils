@@ -16,7 +16,7 @@ use urlencoding::encode;
 // https://pubchem.ncbi.nlm.nih.gov/pug_rest/pug_rest.xsd
 // https://pubchem.ncbi.nlm.nih.gov/pug_view/pug_view.xsd
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AutocompleteTerm {
     compound: Vec<String>,
 }
@@ -69,11 +69,13 @@ pub struct ID {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Section {
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "TOCHeading")]
-    toc_heading: String,
+    toc_heading: Option<String>,
 
-    #[serde(rename = "TOCCID")]
-    toc_cid: isize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "TOCID")]
+    toc_id: Option<isize>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Description")]
@@ -84,10 +86,10 @@ pub struct Section {
     url: Option<String>,
 
     #[serde(rename = "Section")]
-    section: Box<Section>,
+    section: Option<Vec<Section>>,
 
     #[serde(rename = "Information")]
-    information: Box<Information>,
+    information: Option<Vec<Information>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -163,8 +165,9 @@ pub struct Value {
     #[serde(rename = "ExternalTableNumRows")]
     external_table_num_rows: Option<isize>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "StringWithMarkup")]
-    string_with_markup: Vec<StringWithMarkup>,
+    string_with_markup: Option<Vec<StringWithMarkup>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -196,8 +199,14 @@ pub struct Information {
     value: Value,
 }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Record {
+    #[serde(rename = "Record")]
+    record: RecordContent,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct RecordContent {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordType")]
     record_type: Option<String>,
@@ -232,16 +241,17 @@ pub struct Record {
 pub struct PCCompound {
     id: ID,
     props: Vec<Prop>,
-    #[serde(default)]
-    record: Record,
+    record: Option<Record>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Compounds {
     #[serde(rename = "PC_Compounds")]
     pc_compounds: Vec<PCCompound>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     record: Option<Record>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     base64_png: Option<String>,
 }
@@ -298,14 +308,16 @@ pub fn get_compound_by_name(
     // Call NCBI REST API for JSON.
     block_on(rate_limiter.until_ready());
 
-    let resp = match reqwest::blocking::get(format!(
-        "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{urlencoded_name}/JSON",
-    )) {
+    let query_url =
+        format!("https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{urlencoded_name}/JSON");
+    debug!("query_url: {query_url}");
+
+    let resp = match reqwest::blocking::get(query_url) {
         Ok(resp) => resp,
         Err(e) => return Err(e.to_string()),
     };
 
-    debug!("resp: {:#?}", resp);
+    debug!("resp.status(): {}", resp.status());
 
     // Check HTTP code.
     if !resp.status().is_success() {
@@ -317,8 +329,6 @@ pub fn get_compound_by_name(
         Ok(body_text) => body_text,
         Err(e) => return Err(e.to_string()),
     };
-
-    debug!("body_text: {:?}", body_text);
 
     // Unmarshall into JSON.
     let mut compounds: Compounds = match serde_json::from_str(&body_text.to_owned()) {
@@ -338,14 +348,16 @@ pub fn get_compound_by_name(
     // Call NCBI REST API for JSON.
     block_on(rate_limiter.until_ready());
 
-    let resp = match reqwest::blocking::get(format!(
-        "https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/{compound_cid}/JSON",
-    )) {
+    let query_url =
+        format!("https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/{compound_cid}/JSON");
+    debug!("query_url: {query_url}");
+
+    let resp = match reqwest::blocking::get(query_url) {
         Ok(resp) => resp,
         Err(e) => return Err(e.to_string()),
     };
 
-    debug!("resp: {:#?}", resp);
+    debug!("resp.status(): {}", resp.status());
 
     // Check HTTP code.
     if !resp.status().is_success() {
@@ -358,11 +370,9 @@ pub fn get_compound_by_name(
         Err(e) => return Err(e.to_string()),
     };
 
-    debug!("body_text: {:?}", body_text);
-
     // Unmarshall into JSON.
     let record: Record = match serde_json::from_str(&body_text.to_owned()) {
-        Ok(compounds) => compounds,
+        Ok(record) => record,
         Err(e) => return Err(e.to_string()),
     };
 
@@ -375,12 +385,16 @@ pub fn get_compound_by_name(
     // Call NCBI REST API for png.
     block_on(rate_limiter.until_ready());
 
-    let resp = match reqwest::blocking::get(format!(
-        "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{urlencoded_name}/PNG?image_size=300x300",
-    )) {
+    let query_url =
+    format!("https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{urlencoded_name}/PNG?image_size=300x300");
+    debug!("query_url: {query_url}");
+
+    let resp = match reqwest::blocking::get(query_url) {
         Ok(resp) => resp,
         Err(e) => return Err(e.to_string()),
     };
+
+    debug!("resp.status(): {}", resp.status());
 
     // Check HTTP code.
     if !resp.status().is_success() {
@@ -392,8 +406,6 @@ pub fn get_compound_by_name(
         Ok(body_bytes) => body_bytes,
         Err(e) => return Err(e.to_string()),
     };
-
-    debug!("{:?}", body_bytes);
 
     // Create image.
     let image = match image::load_from_memory_with_format(&body_bytes, image::ImageFormat::Png) {
@@ -455,19 +467,19 @@ mod tests {
         let rate_limiter = RateLimiter::direct(Quota::per_second(NonZeroU32::new(5).unwrap()));
 
         info!(
-            "aspirine: {:?}",
+            "aspirine: {:#?}",
             get_compound_by_name(&rate_limiter, "aspirine")
         );
         info!(
-            "D-Diacetyltartaric anhydride: {:?}",
+            "D-Diacetyltartaric anhydride: {:#?}",
             get_compound_by_name(&rate_limiter, "D-Diacetyltartaric anhydride").unwrap()
         );
         info!(
-            "(-)-Diacetyl-D-tartaric Anhydride: {:?}",
+            "(-)-Diacetyl-D-tartaric Anhydride: {:#?}",
             get_compound_by_name(&rate_limiter, "(-)-Diacetyl-D-tartaric Anhydride").unwrap()
         );
         info!(
-            "(+)-Diacetyl-L-tartaric anhydride: {:?}",
+            "(+)-Diacetyl-L-tartaric anhydride: {:#?}",
             get_compound_by_name(&rate_limiter, "(+)-Diacetyl-L-tartaric anhydride").unwrap()
         );
     }
