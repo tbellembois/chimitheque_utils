@@ -30,79 +30,6 @@ pub struct Autocomplete {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(rename = "Prop_value")]
-enum PropValue {
-    #[serde(rename = "ival")]
-    Ival(isize),
-    #[serde(rename = "fval")]
-    Fval(f64),
-    #[serde(rename = "binary")]
-    Binary(String),
-    #[serde(rename = "sval")]
-    Sval(String),
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename = "Prop_URN")]
-pub struct PropURN {
-    label: String,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Prop {
-    urn: PropURN,
-    value: PropValue,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CID {
-    cid: usize,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ID {
-    id: CID,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Section {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "TOCHeading")]
-    toc_heading: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "TOCID")]
-    toc_id: Option<isize>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "Description")]
-    description: Option<String>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "URL")]
-    url: Option<String>,
-
-    #[serde(rename = "Section")]
-    section: Option<Vec<Section>>,
-
-    #[serde(rename = "Information")]
-    information: Option<Vec<Information>>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct StringWithMarkup {
-    #[serde(rename = "String")]
-    string: String,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(rename = "Markup")]
-    markup: Option<Vec<Markup>>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct Markup {
     #[serde(rename = "Start")]
     start: f64,
@@ -121,6 +48,16 @@ pub struct Markup {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Extra")]
     extra: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct StringWithMarkup {
+    #[serde(rename = "String")]
+    string: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Markup")]
+    markup: Option<Vec<Markup>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -200,9 +137,28 @@ pub struct Information {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Record {
-    #[serde(rename = "Record")]
-    record: RecordContent,
+pub struct Section {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "TOCHeading")]
+    toc_heading: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "TOCID")]
+    toc_id: Option<isize>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Description")]
+    description: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "URL")]
+    url: Option<String>,
+
+    #[serde(rename = "Section")]
+    section: Option<Vec<Section>>,
+
+    #[serde(rename = "Information")]
+    information: Option<Vec<Information>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -234,6 +190,50 @@ pub struct RecordContent {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Information")]
     information: Option<Vec<Information>>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename = "Prop_value")]
+enum PropValue {
+    #[serde(rename = "ival")]
+    Ival(isize),
+    #[serde(rename = "fval")]
+    Fval(f64),
+    #[serde(rename = "binary")]
+    Binary(String),
+    #[serde(rename = "sval")]
+    Sval(String),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename = "Prop_URN")]
+pub struct PropURN {
+    label: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Prop {
+    urn: PropURN,
+    value: PropValue,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Record {
+    #[serde(rename = "Record")]
+    record: RecordContent,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct CID {
+    cid: usize,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ID {
+    id: CID,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
