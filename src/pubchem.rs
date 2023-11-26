@@ -244,16 +244,35 @@ pub struct PCCompound {
     record: Option<Record>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Compounds {
-    #[serde(rename = "PC_Compounds")]
-    pc_compounds: Vec<PCCompound>,
-
     #[serde(skip_serializing_if = "Option::is_none")]
     record: Option<Record>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     base64_png: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Property {
+    #[serde(rename = "CID")]
+    cid: usize,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "MolecularFormula")]
+    molecular_formula: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Properties {
+    #[serde(rename = "Properties")]
+    properties: Vec<Property>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PropertyTable {
+    #[serde(rename = "PropertyTable")]
+    property_table: Properties,
 }
 
 pub fn autocomplete(
@@ -303,13 +322,14 @@ pub fn get_compound_by_name(
     let urlencoded_name = encode(name);
 
     //
-    // Get basic informations.
+    // Get compound CID.
     //
     // Call NCBI REST API for JSON.
     block_on(rate_limiter.until_ready());
 
+    // We need to query at least one property to get the CID. Choosing MolecularFormula.
     let query_url =
-        format!("https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{urlencoded_name}/JSON");
+        format!("https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/{urlencoded_name}/property/MolecularFormula/JSON");
     debug!("query_url: {query_url}");
 
     let resp = match reqwest::blocking::get(query_url) {
@@ -331,14 +351,14 @@ pub fn get_compound_by_name(
     };
 
     // Unmarshall into JSON.
-    let mut compounds: Compounds = match serde_json::from_str(&body_text.to_owned()) {
-        Ok(compounds) => compounds,
+    let property_table: PropertyTable = match serde_json::from_str(&body_text.to_owned()) {
+        Ok(property_table) => property_table,
         Err(e) => return Err(e.to_string()),
     };
 
     // Extract compound cid.
-    let compound_cid = match compounds.pc_compounds.get(0) {
-        Some(compound_cid) => compound_cid.id.id.cid,
+    let compound_cid = match property_table.property_table.properties.first() {
+        Some(compound_cid) => compound_cid.cid,
         None => return Err("can not find compound cid".to_string()),
     };
 
@@ -376,8 +396,11 @@ pub fn get_compound_by_name(
         Err(e) => return Err(e.to_string()),
     };
 
-    // Update the result.
-    compounds.record = Some(record);
+    // Create the result.
+    let mut compounds = Compounds {
+        record: Some(record),
+        ..Default::default()
+    };
 
     //
     // Get 2d image.
