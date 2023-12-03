@@ -19,7 +19,7 @@ pub struct Autocomplete {
 }
 
 // PUG REST
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Markup {
     #[serde(rename = "Start")]
     start: f64,
@@ -29,7 +29,7 @@ pub struct Markup {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "URL")]
-    url: Option<String>,
+    pub(crate) url: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Type")]
@@ -40,17 +40,17 @@ pub struct Markup {
     extra: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct StringWithMarkup {
     #[serde(rename = "String")]
     string: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Markup")]
-    markup: Option<Vec<Markup>>,
+    pub(crate) markup: Option<Vec<Markup>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Value {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Number")]
@@ -94,7 +94,7 @@ pub struct Value {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "StringWithMarkup")]
-    string_with_markup: Option<Vec<StringWithMarkup>>,
+    pub(crate) string_with_markup: Option<Vec<StringWithMarkup>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -104,7 +104,7 @@ pub struct Information {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Name")]
-    name: Option<String>,
+    pub(crate) name: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Description")]
@@ -123,32 +123,32 @@ pub struct Information {
     license_url: Option<String>,
 
     #[serde(rename = "Value")]
-    value: Value,
+    pub(crate) value: Value,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Section {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "TOCHeading")]
-    toc_heading: Option<String>,
+    pub(crate) toc_heading: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "TOCID")]
-    toc_id: Option<isize>,
+    pub(crate) toc_id: Option<isize>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Description")]
-    description: Option<String>,
+    pub(crate) description: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "URL")]
-    url: Option<String>,
+    pub(crate) url: Option<String>,
 
     #[serde(rename = "Section")]
-    section: Option<Vec<Section>>,
+    pub(crate) section: Option<Vec<Section>>,
 
     #[serde(rename = "Information")]
-    information: Option<Vec<Information>>,
+    pub(crate) information: Option<Vec<Information>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -167,7 +167,7 @@ pub struct RecordContent {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordTitle")]
-    record_title: Option<String>,
+    pub(crate) record_title: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "RecordExternalURL")]
@@ -175,7 +175,7 @@ pub struct RecordContent {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Section")]
-    section: Option<Vec<Section>>,
+    pub(crate) section: Option<Vec<Section>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "Information")]
@@ -213,7 +213,7 @@ pub struct Prop {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Record {
     #[serde(rename = "Record")]
-    record: RecordContent,
+    pub(crate) record: RecordContent,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

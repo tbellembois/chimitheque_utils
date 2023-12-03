@@ -11,7 +11,10 @@ use governor::{
 use log::debug;
 use urlencoding::encode;
 
-use crate::pubchem_type::{Autocomplete, Compounds, PropertyTable, Record};
+use crate::{
+    product::Product,
+    pubchem_type::{Autocomplete, Compounds, PropertyTable, Record},
+};
 
 pub fn autocomplete(
     rate_limiter: &RateLimiter<NotKeyed, InMemoryState, clock::DefaultClock, NoOpMiddleware>,
@@ -51,6 +54,17 @@ pub fn autocomplete(
     };
 
     Ok(autocomplete)
+}
+
+pub fn get_product_by_name(
+    rate_limiter: &RateLimiter<NotKeyed, InMemoryState, clock::DefaultClock, NoOpMiddleware>,
+    name: &str,
+) -> Result<Option<Product>, String> {
+    let compounds = get_compound_by_name(rate_limiter, name)?;
+
+    let product = Product::from_pubchem(compounds);
+
+    Ok(product)
 }
 
 pub fn get_compound_by_name(
@@ -219,6 +233,30 @@ mod tests {
             autocomplete(&rate_limiter, "DIACETYL-L-TARTARIC ANHYDRIDE").unwrap()
         );
         info!("#: {:?}", autocomplete(&rate_limiter, "#").unwrap());
+    }
+
+    #[test]
+    fn test_get_product_by_name() {
+        init_logger();
+
+        let rate_limiter = RateLimiter::direct(Quota::per_second(NonZeroU32::new(5).unwrap()));
+
+        info!(
+            "aspirine: {:#?}",
+            get_product_by_name(&rate_limiter, "aspirine")
+        );
+        info!(
+            "D-Diacetyltartaric anhydride: {:#?}",
+            get_product_by_name(&rate_limiter, "D-Diacetyltartaric anhydride").unwrap()
+        );
+        info!(
+            "(-)-Diacetyl-D-tartaric Anhydride: {:#?}",
+            get_product_by_name(&rate_limiter, "(-)-Diacetyl-D-tartaric Anhydride").unwrap()
+        );
+        info!(
+            "(+)-Diacetyl-L-tartaric anhydride: {:#?}",
+            get_product_by_name(&rate_limiter, "(+)-Diacetyl-L-tartaric anhydride").unwrap()
+        );
     }
 
     #[test]
