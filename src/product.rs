@@ -1,141 +1,301 @@
+use jsonpath_rust::JsonPathQuery;
 use log::debug;
+use regex::Regex;
 use serde::Serialize;
-
-use crate::pubchem_type::Compounds;
+use serde_json::Value;
 
 // A simplified product representation for Chimithèque.
 #[derive(Debug, Default, Serialize)]
 pub struct Product {
-    name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    iupac_name: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    inchi: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    inchi_key: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    canonical_smiles: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    molecular_formula: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    cas: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ec: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    molecular_weight: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    molecular_weight_unit: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    boiling_point: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    synonyms: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     symbols: Option<Vec<String>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    twodpicture: Option<String>, // base64 encoded png
+    signal: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    hs: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ps: Option<Vec<String>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub twodpicture: Option<String>, // base64 encoded png
 }
 
 impl Product {
-    pub(crate) fn from_pubchem(compounds: Compounds) -> Option<Product> {
+    pub(crate) fn from_pubchem(json_content: String) -> Option<Product> {
+        // Precautionary statement regex.
+        let precautionary_statement_re = Regex::new(r"(?P<statement>P[0-9]{3}\+{0,1})+").unwrap();
+        // Hazard statement regex.
+        let hazard_statement_re =
+            Regex::new(r"(?P<statement>(AU|EU){0,1}H[0-9]{3}F{0,1}f{0,1}D{0,1}d{0,1}\+{0,1})+")
+                .unwrap();
+
         // Final result.
         let mut product = Product {
             ..Default::default()
         };
 
-        // Reaching the section.
-        if let Some(record) = compounds.record {
-            // Get product name.
-            if let Some(title) = record.record.record_title {
-                product.name = title;
-            } else {
-                debug!("no record title");
-                return None;
-            }
+        let json_content: Value = serde_json::from_str(&json_content).unwrap();
 
-            if let Some(section) = record.record.section {
-                for section_item in section {
-                    let toc_heading = match section_item.toc_heading {
-                        Some(toc_heading) => toc_heading,
-                        None => return Some(product),
-                    };
-                    debug!("{:?}", toc_heading);
+        // Name.
+        let name = json_content.clone().path("$.Record.RecordTitle").unwrap();
 
-                    match toc_heading.as_str() {
-                        // "Information": [
-                        //   {
-                        //     "ReferenceNumber": 17,
-                        //     "Name": "Chemical Safety",
-                        //     "Value": {
-                        //       "StringWithMarkup": [
-                        //         {
-                        //           "String": "          ",
-                        //           "Markup": [
-                        //             {
-                        //               "Start": 0,
-                        //               "Length": 1,
-                        //               "URL": "https://pubchem.ncbi.nlm.nih.gov/images/ghs/GHS05.svg",
-                        //               "Type": "Icon",
-                        //               "Extra": "Corrosive"
-                        //             },
-                        //             {
-                        //               "Start": 1,
-                        //               "Length": 1,
-                        //               "URL": "https://pubchem.ncbi.nlm.nih.gov/images/ghs/GHS07.svg",
-                        //               "Type": "Icon",
-                        //               "Extra": "Irritant"
-                        //             }
-                        "Chemical Safety" => {
-                            section_item
-                                .information // maybe slice of Information
-                                .and_then(|information| {
-                                    information.into_iter().find(|information_item| {
-                                        information_item
-                                            .name
-                                            .eq(&Some("Chemical Safety".to_string()))
-                                    })
-                                }) // Information
-                                .map(|information_chemical_safety| {
-                                    information_chemical_safety.value
-                                }) // maybe Value
-                                .and_then(|value| {
-                                    value.string_with_markup.map(|string_with_markup| {
-                                        // slice of StringWithMarkup
-                                        string_with_markup
-                                            .into_iter()
-                                            .map(|string_with_markup_item| {
-                                                string_with_markup_item.markup.map(|markup_item| {
-                                                    product.symbols = Some(
-                                                        markup_item
-                                                            .into_iter()
-                                                            .filter_map(|markup| match markup.url {
-                                                                Some(_) => markup.url,
-                                                                None => None,
-                                                            })
-                                                            .collect::<Vec<_>>(),
-                                                    );
-                                                })
-                                            })
-                                            .collect::<Vec<_>>()
-                                    })
-                                });
-                            debug!("{:?}", product.symbols)
-                        }
-                        // "TOCHeading": "Names and Identifiers",
-                        // "Description": "Chemical names, synonyms, identifiers, and descriptors.",
-                        // "Section": [
-                        //   {
-                        //     "TOCHeading": "Computed Descriptors",
-                        //     "Description": "Structural descriptors generated or computed for the structures of this compound, including the IUPAC name, InChI/InChIKey, and canonical/isomeric SMILES.",
-                        //     "Section": [
-                        //       {
-                        //         "TOCHeading": "IUPAC Name",
-                        //         "Description": "Chemical name of this compound, computed from its structure based on the International Union of Pure and Applied Chemistry (IUPAC) nomenclature standards.",
-                        //         "URL": "https://iupac.org/what-we-do/nomenclature/",
-                        //         "Information": [
-                        //           {
-                        //             "ReferenceNumber": 17,
-                        //             "Reference": [
-                        //               "Computed by Lexichem TK 2.7.0 (PubChem release 2021.05.07)"
-                        //             ],
-                        //             "Value": {
-                        //               "StringWithMarkup": [
-                        //                 {
-                        //                   "String": "[(3R,4R)-4-acetyloxy-2,5-dioxooxolan-3-yl] acetate",
-                        "Names and Identifiers" => (),
-                        _ => (),
-                    };
-                }
-            } else {
-                debug!("no section");
-                return None;
-            }
-        } else {
-            debug!("no record");
-            return None;
+        debug!("name: {:#?}", name);
+        product.name = name
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // IUPAC name.
+        let iupac_name = json_content.clone()
+        .path("$..Section[?(@.TOCHeading=='IUPAC Name')].Information[0].Value.StringWithMarkup[0].String")
+        .unwrap();
+
+        debug!("iupac_name: {:#?}", iupac_name);
+        product.iupac_name = iupac_name
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // InChi.
+        let inchi = json_content
+            .clone()
+            .path(
+                "$..Section[?(@.TOCHeading=='InChI')].Information[0].Value.StringWithMarkup[0].String",
+            )
+            .unwrap();
+
+        debug!("inchi: {:#?}", inchi);
+        product.inchi = inchi
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // InChi key.
+        let inchi_key = json_content
+        .clone()
+        .path(
+            "$..Section[?(@.TOCHeading=='InChIKey')].Information[0].Value.StringWithMarkup[0].String",
+        )
+        .unwrap();
+
+        debug!("inchi_key: {:#?}", inchi_key);
+        product.inchi_key = inchi_key
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // Canonical SMILES.
+        let canonical_smiles = json_content
+        .clone()
+        .path(
+            "$..Section[?(@.TOCHeading=='Canonical SMILES')].Information[0].Value.StringWithMarkup[0].String",
+        )
+        .unwrap();
+
+        debug!("canonical_smiles: {:#?}", canonical_smiles);
+        product.canonical_smiles = canonical_smiles
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // Molecular formula.
+        let molecular_formula = json_content
+        .clone()
+        .path(
+            "$..Section[?(@.TOCHeading=='Molecular Formula')].Information[0].Value.StringWithMarkup[0].String",
+        )
+        .unwrap();
+
+        debug!("molecular_formula: {:#?}", molecular_formula);
+        product.molecular_formula = molecular_formula
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // CAS.
+        let cas = json_content
+            .clone()
+            .path("$..Section[?(@.TOCHeading=='CAS')].Information[0].Value.StringWithMarkup[0].String")
+            .unwrap();
+
+        debug!("cas: {:#?}", cas);
+        product.cas = cas
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // EC.
+        let ec = json_content
+        .clone()
+        .path("$..Section[?(@.TOCHeading=='European Community (EC) Number')].Information[0].Value.StringWithMarkup[0].String")
+        .unwrap();
+
+        debug!("ec: {:#?}", ec);
+        product.ec = ec
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // Synonyms.
+        let synonyms = json_content
+            .clone()
+            .path(
+                "$..Section[?(@.TOCHeading=='Synonyms')].Section[?(@.TOCHeading!='Removed Synonyms')]..String",
+            )
+            .unwrap();
+
+        debug!("synonyms: {:#?}", synonyms);
+        product.synonyms = synonyms
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+        if product.synonyms.is_some() {
+            product.synonyms.as_mut().unwrap().sort();
+            product.synonyms.as_mut().unwrap().dedup();
         }
 
-        // 2d picture.
-        product.twodpicture = compounds.base64_png;
+        // Molecular weight.
+        let molecular_weight = json_content
+            .clone()
+            .path("$..Section[?(@.TOCHeading=='Molecular Weight')].Information[0].Value.StringWithMarkup[0].String")
+            .unwrap();
+
+        debug!("molecular_weight: {:#?}", molecular_weight);
+        product.molecular_weight = molecular_weight
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // Molecular weight unit.
+        let molecular_weight_unit = json_content
+            .clone()
+            .path("$..Section[?(@.TOCHeading=='Molecular Weight')].Information[0].Value.Unit")
+            .unwrap();
+
+        debug!("molecular_weight_unit: {:#?}", molecular_weight_unit);
+        product.molecular_weight_unit = molecular_weight_unit
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // Boiling point.
+        let boiling_point = json_content
+            .clone()
+            .path("$..Section[?(@.TOCHeading=='Boiling Point')].Information[?(@.Description=='PEER REVIEWED')].Value.StringWithMarkup[0].String")
+            .unwrap();
+
+        debug!("boiling_point: {:#?}", boiling_point);
+        product.boiling_point = boiling_point
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        // Symbols.
+        let symbols = json_content
+            .clone()
+            .path("$..Information[?(@.Name=='Pictogram(s)')]..StringWithMarkup..Markup..URL")
+            .unwrap();
+
+        debug!("symbols: {:#?}", symbols);
+        product.symbols = symbols
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+        if product.symbols.is_some() {
+            product.symbols.as_mut().unwrap().sort();
+            product.symbols.as_mut().unwrap().dedup();
+        }
+
+        // Signal.
+        let signal = json_content
+            .clone()
+            .path("$..Information[?(@.Name=='Signal')]..StringWithMarkup..String")
+            .unwrap();
+
+        debug!("signal: {:#?}", signal);
+        product.signal = signal
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+        if product.signal.is_some() {
+            product.signal.as_mut().unwrap().sort();
+            product.signal.as_mut().unwrap().dedup();
+        }
+
+        // Hazard statements.
+        let hs = json_content
+            .clone()
+            .path("$..Information[?(@.Name=='GHS Hazard Statements')]..StringWithMarkup..String")
+            .unwrap();
+
+        debug!("hs: {:#?}", hs);
+
+        let maybe_hs_string_vec: Option<Vec<String>> = hs
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        if let Some(hs_string_vec) = maybe_hs_string_vec {
+            let hs_string = hs_string_vec.join(",");
+            product.hs = hazard_statement_re
+                .captures_iter(&hs_string)
+                .map(|p| {
+                    p.name("statement")
+                        .map(|statement| statement.as_str().to_string())
+                })
+                .collect();
+            product.hs.as_mut().unwrap().sort();
+            product.hs.as_mut().unwrap().dedup();
+        }
+
+        // Precautionary statements.
+        let ps = json_content
+            .clone()
+            .path("$..Information[?(@.Name=='Precautionary Statement Codes')]..StringWithMarkup[0].String")
+            .unwrap();
+
+        debug!("ps: {:#?}", ps);
+
+        let maybe_ps_string_vec: Option<Vec<String>> = ps
+            .as_array()
+            .map(|v| v.iter().map(|s| s.to_string()).collect());
+
+        if let Some(ps_string_vec) = maybe_ps_string_vec {
+            let ps_string = ps_string_vec.join(",");
+            product.ps = precautionary_statement_re
+                .captures_iter(&ps_string)
+                .map(|p| {
+                    p.name("statement")
+                        .map(|statement| statement.as_str().to_string())
+                })
+                .collect();
+            product.ps.as_mut().unwrap().sort();
+            product.ps.as_mut().unwrap().dedup();
+        }
 
         Some(product)
     }
@@ -144,12 +304,14 @@ impl Product {
 #[cfg(test)]
 mod tests {
 
-    use std::{fs::File, path::Path};
+    use std::{
+        fs::{self},
+        path::Path,
+    };
 
     use log::info;
 
     use super::*;
-    use crate::{pubchem_type::Record, testdata::defines::BASE64_FERRIS};
 
     fn init_logger() {
         let _ = env_logger::builder().is_test(true).try_init();
@@ -160,17 +322,10 @@ mod tests {
         init_logger();
 
         let json_file_path = Path::new("src/testdata/pubchem_pug_view.json");
-        let file = File::open(json_file_path).expect("error while opening json file");
+        let json_string =
+            fs::read_to_string(json_file_path).expect("error while opening json file");
 
-        let record: Record = serde_json::from_reader(file).expect("error while reading or parsing");
-
-        let mut compounds: Compounds = Compounds {
-            ..Default::default()
-        };
-        compounds.record = Some(record);
-        compounds.base64_png = Some(BASE64_FERRIS.to_string());
-
-        let product = Product::from_pubchem(compounds);
+        let product = Product::from_pubchem(json_string);
         info!("{:#?}", product);
     }
 }

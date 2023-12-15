@@ -7,10 +7,11 @@ edition = "2021"
 
 [dependencies]
 env_logger = "0.10.0"
+jsonpath-rust = "0.3.5"
 log = "0.4.20"
 regex = "1.10.2"
 url = "2.4.1"
-reqwest = { version = "0.11", features = ["blocking", "json"] }
+reqwest = { version = "0.11", features = ["blocking", "json", "gzip", "deflate"] } 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.68"
 
@@ -20,3 +21,6 @@ governor = "0.6.0"
 futures = "0.3.29"
 image = "0.24.7"
 base64 = "0.21.5"
+
+[profile.release]
+debug = true
