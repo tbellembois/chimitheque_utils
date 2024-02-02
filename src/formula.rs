@@ -16,7 +16,7 @@ use std::collections::HashMap;
 // note: if a multiplier is not a digit return an error (can not convert)
 // Returns the empirical formula from "formula".
 // Only operates on basic formulas.
-pub fn empirical_formula(formula: &str) -> Result<String, String> {
+pub fn sort_empirical_formula(formula: &str) -> Result<String, String> {
     let periodic_table = HashMap::from([
         ("Ac", "actinium"),
         ("Ag", "silver"),
@@ -379,7 +379,7 @@ mod tests {
     }
 
     #[test]
-    fn test_empirical_formula() {
+    fn test_sort_empirical_formula() {
         init_logger();
 
         let empirical_formulas = vec![
@@ -555,7 +555,7 @@ mod tests {
         ];
 
         for formula in empirical_formulas {
-            assert_eq!(empirical_formula(formula), Ok(formula.to_string()));
+            assert_eq!(sort_empirical_formula(formula), Ok(formula.to_string()));
         }
 
         let linear_formulas = vec![
@@ -786,7 +786,7 @@ mod tests {
         ];
 
         for formula in linear_formulas {
-            let maybe_empirical_formula = empirical_formula(formula);
+            let maybe_empirical_formula = sort_empirical_formula(formula);
             info!("{formula} -> {:?}", maybe_empirical_formula);
 
             assert!(maybe_empirical_formula.is_ok());
