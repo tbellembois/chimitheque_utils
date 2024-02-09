@@ -12,8 +12,8 @@ use log::debug;
 use urlencoding::encode;
 
 use crate::{
-    product::Product,
-    pubchem_type::{Autocomplete, PropertyTable, Record},
+    pubchem_compound::{Autocomplete, PropertyTable, Record},
+    pubchem_product::PubchemProduct,
 };
 
 pub fn autocomplete(
@@ -61,10 +61,10 @@ pub fn autocomplete(
 pub fn get_product_by_name(
     rate_limiter: &RateLimiter<NotKeyed, InMemoryState, clock::DefaultClock, NoOpMiddleware>,
     name: &str,
-) -> Result<Option<Product>, String> {
+) -> Result<Option<PubchemProduct>, String> {
     let record = get_raw_compound_by_name(rate_limiter, name)?;
 
-    let mut product = Product::from_pubchem(record);
+    let mut product = PubchemProduct::from_pubchem(record);
 
     //
     // Get 2d image.

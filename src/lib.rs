@@ -1,8 +1,8 @@
 pub mod casnumber;
 pub mod cenumber;
 pub mod formula;
-mod product;
 pub mod pubchem;
-mod pubchem_type;
+mod pubchem_compound;
+mod pubchem_product;
 pub mod requestfilter;
 mod testdata;

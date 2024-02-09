@@ -4,9 +4,9 @@ use regex::Regex;
 use serde::Serialize;
 use serde_json::Value;
 
-// A simplified product representation for Chimithèque.
+// A simplified pubchem product representation.
 #[derive(Debug, Default, Serialize)]
-pub struct Product {
+pub struct PubchemProduct {
     #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
 
@@ -59,8 +59,8 @@ pub struct Product {
     pub twodpicture: Option<String>, // base64 encoded png
 }
 
-impl Product {
-    pub(crate) fn from_pubchem(json_content: String) -> Option<Product> {
+impl PubchemProduct {
+    pub(crate) fn from_pubchem(json_content: String) -> Option<PubchemProduct> {
         // Precautionary statement regex.
         let precautionary_statement_re = Regex::new(r"(?P<statement>P[0-9]{3}\+{0,1})+").unwrap();
         // Hazard statement regex.
@@ -69,7 +69,7 @@ impl Product {
                 .unwrap();
 
         // Final result.
-        let mut product = Product {
+        let mut product = PubchemProduct {
             ..Default::default()
         };
 
@@ -325,7 +325,7 @@ mod tests {
         let json_string =
             fs::read_to_string(json_file_path).expect("error while opening json file");
 
-        let product = Product::from_pubchem(json_string);
+        let product = PubchemProduct::from_pubchem(json_string);
         info!("{:#?}", product);
     }
 }
