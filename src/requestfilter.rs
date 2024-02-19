@@ -33,7 +33,7 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
 
         match query_pair {
             (std::borrow::Cow::Borrowed(key), std::borrow::Cow::Borrowed(value)) => match key {
-                "search" => request_filter.search = format!("%{}%", value),
+                "search" => request_filter.search = Some(format!("%{}%", value)),
                 "order_by" => request_filter.order_by = Some(value.to_string()),
                 "order" => request_filter.order = value.to_string(),
                 "offset" => match value.parse::<usize>() {
@@ -304,7 +304,7 @@ mod tests {
         &unit_type=foo",
         );
 
-        assert_eq!(filter.clone().unwrap().search, "%foo%");
+        assert_eq!(filter.clone().unwrap().search, Some(String::from("%foo%")));
         assert_eq!(filter.clone().unwrap().order_by, Some(String::from("foo")));
         assert_eq!(filter.clone().unwrap().order, "foo");
         assert_eq!(filter.clone().unwrap().offset, 10);
