@@ -33,7 +33,7 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
 
         match query_pair {
             (std::borrow::Cow::Borrowed(key), std::borrow::Cow::Borrowed(value)) => match key {
-                "search" => request_filter.search = Some(format!("%{}%", value)),
+                "search" => request_filter.search = Some(value.to_string()),
                 "order_by" => request_filter.order_by = Some(value.to_string()),
                 "order" => request_filter.order = value.to_string(),
                 "offset" => match value.parse::<usize>() {
