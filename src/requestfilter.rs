@@ -36,11 +36,11 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                 "search" => request_filter.search = Some(value.to_string()),
                 "order_by" => request_filter.order_by = Some(value.to_string()),
                 "order" => request_filter.order = value.to_string(),
-                "offset" => match value.parse::<usize>() {
+                "offset" => match value.parse::<u64>() {
                     Ok(v) => request_filter.offset = v,
                     Err(e) => return Err(format!("error with offset query parameter: {e}")),
                 },
-                "limit" => match value.parse::<usize>() {
+                "limit" => match value.parse::<u64>() {
                     Ok(v) => request_filter.limit = Some(v),
                     Err(e) => return Err(format!("error with limit query parameter: {e}")),
                 },
@@ -52,7 +52,7 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                     Ok(v) => request_filter.borrowing = v,
                     Err(e) => return Err(format!("error with borrowing query parameter: {e}")),
                 },
-                "cas_number" => match value.parse::<usize>() {
+                "cas_number" => match value.parse::<u64>() {
                     Ok(v) => request_filter.cas_number = Some(v),
                     Err(e) => return Err(format!("error with cas_number query parameter: {e}")),
                 },
@@ -62,20 +62,20 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                         return Err(format!("error with cas_number_cmr query parameter: {e}"))
                     }
                 },
-                "category" => match value.parse::<usize>() {
+                "category" => match value.parse::<u64>() {
                     Ok(v) => request_filter.category = Some(v),
                     Err(e) => return Err(format!("error with category query parameter: {e}")),
                 },
                 "custom_name_part_of" => {
                     request_filter.custom_name_part_of = Some(value.to_string())
                 }
-                "empirical_formula" => match value.parse::<usize>() {
+                "empirical_formula" => match value.parse::<u64>() {
                     Ok(v) => request_filter.empirical_formula = Some(v),
                     Err(e) => {
                         return Err(format!("error with empirical_formula query parameter: {e}"))
                     }
                 },
-                "entity" => match value.parse::<usize>() {
+                "entity" => match value.parse::<u64>() {
                     Ok(v) => request_filter.entity = Some(v),
                     Err(e) => return Err(format!("error with entity query parameter: {e}")),
                 },
@@ -85,11 +85,11 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                     }
 
                     let caps = ids_capture.captures_iter(value);
-                    let mut hazard_statement_ids: Vec<usize> = Vec::new();
+                    let mut hazard_statement_ids: Vec<u64> = Vec::new();
                     for cap in caps {
                         // We can unwrap safely here because of validation (is_match) below.
                         let id_str = cap.name("id").unwrap().as_str();
-                        let id = id_str.parse::<usize>().unwrap();
+                        let id = id_str.parse::<u64>().unwrap();
 
                         hazard_statement_ids.push(id);
                     }
@@ -105,17 +105,17 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                     }
 
                     let caps = ids_capture.captures_iter(value);
-                    let mut storage_ids: Vec<usize> = Vec::new();
+                    let mut storage_ids: Vec<u64> = Vec::new();
                     for cap in caps {
                         // We can unwrap safely here because of validation (is_match) below.
                         let id_str = cap.name("id").unwrap().as_str();
-                        let id = id_str.parse::<usize>().unwrap();
+                        let id = id_str.parse::<u64>().unwrap();
 
                         storage_ids.push(id);
                     }
                     request_filter.storages = Some(storage_ids);
                 }
-                "name" => match value.parse::<usize>() {
+                "name" => match value.parse::<u64>() {
                     Ok(v) => request_filter.name = Some(v),
                     Err(e) => return Err(format!("error with name query parameter: {e}")),
                 },
@@ -126,25 +126,25 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                     }
 
                     let caps = ids_capture.captures_iter(value);
-                    let mut precautionary_statement_ids: Vec<usize> = Vec::new();
+                    let mut precautionary_statement_ids: Vec<u64> = Vec::new();
                     for cap in caps {
                         // We can unwrap safely here because of validation (is_match) below.
                         let id_str = cap.name("id").unwrap().as_str();
-                        let id = id_str.parse::<usize>().unwrap();
+                        let id = id_str.parse::<u64>().unwrap();
 
                         precautionary_statement_ids.push(id);
                     }
                     request_filter.precautionary_statements = Some(precautionary_statement_ids);
                 }
-                "producer" => match value.parse::<usize>() {
+                "producer" => match value.parse::<u64>() {
                     Ok(v) => request_filter.producer = Some(v),
                     Err(e) => return Err(format!("error with producer query parameter: {e}")),
                 },
-                "producer_ref" => match value.parse::<usize>() {
+                "producer_ref" => match value.parse::<u64>() {
                     Ok(v) => request_filter.producer_ref = Some(v),
                     Err(e) => return Err(format!("error with producer_ref query parameter: {e}")),
                 },
-                "product" => match value.parse::<usize>() {
+                "product" => match value.parse::<u64>() {
                     Ok(v) => request_filter.product = Some(v),
                     Err(e) => return Err(format!("error with product query parameter: {e}")),
                 },
@@ -163,11 +163,11 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                     Ok(v) => request_filter.show_consu = v,
                     Err(e) => return Err(format!("error with show_consu query parameter: {e}")),
                 },
-                "signal_word" => match value.parse::<usize>() {
+                "signal_word" => match value.parse::<u64>() {
                     Ok(v) => request_filter.signal_word = Some(v),
                     Err(e) => return Err(format!("error with signal_word query parameter: {e}")),
                 },
-                "storage" => match value.parse::<usize>() {
+                "storage" => match value.parse::<u64>() {
                     Ok(v) => request_filter.storage = Some(v),
                     Err(e) => return Err(format!("error with storage query parameter: {e}")),
                 },
@@ -189,7 +189,7 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                         ))
                     }
                 },
-                "store_location" => match value.parse::<usize>() {
+                "store_location" => match value.parse::<u64>() {
                     Ok(v) => request_filter.store_location = Some(v),
                     Err(e) => {
                         return Err(format!("error with store_location query parameter: {e}"))
@@ -203,7 +203,7 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                         ))
                     }
                 },
-                "supplier" => match value.parse::<usize>() {
+                "supplier" => match value.parse::<u64>() {
                     Ok(v) => request_filter.supplier = Some(v),
                     Err(e) => return Err(format!("error with supplier query parameter: {e}")),
                 },
@@ -213,11 +213,11 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                     }
 
                     let caps = ids_capture.captures_iter(value);
-                    let mut symbol_ids: Vec<usize> = Vec::new();
+                    let mut symbol_ids: Vec<u64> = Vec::new();
                     for cap in caps {
                         // We can unwrap safely here because of validation (is_match) below.
                         let id_str = cap.name("id").unwrap().as_str();
-                        let id = id_str.parse::<usize>().unwrap();
+                        let id = id_str.parse::<u64>().unwrap();
 
                         symbol_ids.push(id)
                     }
@@ -229,11 +229,11 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                     }
 
                     let caps = ids_capture.captures_iter(value);
-                    let mut tag_ids: Vec<usize> = Vec::new();
+                    let mut tag_ids: Vec<u64> = Vec::new();
                     for cap in caps {
                         // We can unwrap safely here because of validation (is_match) below.
                         let id_str = cap.name("id").unwrap().as_str();
-                        let id = id_str.parse::<usize>().unwrap();
+                        let id = id_str.parse::<u64>().unwrap();
 
                         tag_ids.push(id);
                     }
@@ -264,7 +264,7 @@ mod tests {
 
         // Valid values.
         let filter = request_filter(
-            "http://localhost/?search=foo\
+            "http://localhost/?search=%foo%\
         &order_by=foo\
         &order=foo\
         &offset=10\
