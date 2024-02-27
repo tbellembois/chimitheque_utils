@@ -37,7 +37,7 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
                 "order_by" => request_filter.order_by = Some(value.to_string()),
                 "order" => request_filter.order = value.to_string(),
                 "offset" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.offset = v,
+                    Ok(v) => request_filter.offset = Some(v),
                     Err(e) => return Err(format!("error with offset query parameter: {e}")),
                 },
                 "limit" => match value.parse::<u64>() {
@@ -307,7 +307,7 @@ mod tests {
         assert_eq!(filter.clone().unwrap().search, Some(String::from("%foo%")));
         assert_eq!(filter.clone().unwrap().order_by, Some(String::from("foo")));
         assert_eq!(filter.clone().unwrap().order, "foo");
-        assert_eq!(filter.clone().unwrap().offset, 10);
+        assert_eq!(filter.clone().unwrap().offset, Some(10));
         assert_eq!(filter.clone().unwrap().limit, Some(10));
         assert!(filter.clone().unwrap().bookmark);
         assert!(filter.clone().unwrap().borrowing);
