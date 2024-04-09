@@ -212,13 +212,11 @@ pub fn get_raw_compound_by_name(
         return Err(resp.status().to_string());
     }
 
-    debug!("A");
     // Get response body.
     let body_text = match resp.text() {
         Ok(body_text) => body_text,
         Err(e) => return Err(e.to_string()),
     };
-    debug!("B");
 
     Ok(body_text)
 }
