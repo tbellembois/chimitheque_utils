@@ -1,6 +1,7 @@
 use std::io::Cursor;
 
 use base64::{engine::general_purpose, Engine};
+use chimitheque_types::pubchemproduct::PubchemProduct;
 use futures::executor::block_on;
 use governor::{
     clock,
@@ -11,10 +12,7 @@ use governor::{
 use log::debug;
 use urlencoding::encode;
 
-use crate::{
-    pubchem_compound::{Autocomplete, PropertyTable, Record},
-    pubchem_product::PubchemProduct,
-};
+use crate::pubchem_compound::{Autocomplete, PropertyTable, Record};
 
 pub fn autocomplete(
     rate_limiter: &RateLimiter<NotKeyed, InMemoryState, clock::DefaultClock, NoOpMiddleware>,
