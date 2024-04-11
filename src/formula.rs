@@ -1,5 +1,36 @@
 use log::debug;
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    fmt::{Display, Formatter},
+    num::ParseIntError,
+};
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum SortEmpiricalFormulaError {
+    UnbalancedParenthesis,
+    UnknowAtom(String),
+    CanNotParseNumber(ParseIntError),
+    NumberAfterUnknowAtom,
+    UnexpectedNoneAtomCount(String),
+}
+
+impl Display for SortEmpiricalFormulaError {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        match self {
+            SortEmpiricalFormulaError::UnbalancedParenthesis => write!(f, "unbalanced parenthesis"),
+            SortEmpiricalFormulaError::UnknowAtom(s) => write!(f, "unknown atom {s}"),
+            SortEmpiricalFormulaError::CanNotParseNumber(ref e) => e.fmt(f),
+            SortEmpiricalFormulaError::NumberAfterUnknowAtom => {
+                write!(f, "found a number after no known atom")
+            }
+            SortEmpiricalFormulaError::UnexpectedNoneAtomCount(s) => {
+                write!(f, "unexpected empty atom_count_map value for key {s}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for SortEmpiricalFormulaError {}
 
 // Cl(CaC2(NaCl)3)2.Na=P
 // ^^. .. . . .. . .      Cl c=1 d=0
@@ -16,7 +47,7 @@ use std::collections::HashMap;
 // note: if a multiplier is not a digit return an error (can not convert)
 // Returns the empirical formula from "formula".
 // Only operates on basic formulas.
-pub fn sort_empirical_formula(formula: &str) -> Result<String, String> {
+pub fn sort_empirical_formula(formula: &str) -> Result<String, SortEmpiricalFormulaError> {
     let periodic_table = HashMap::from([
         ("Ac", "actinium"),
         ("Ag", "silver"),
@@ -185,7 +216,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, String> {
                 parenthesis_depth -= 1;
                 // Check wrong parenthesis number.
                 if parenthesis_depth < 0 {
-                    return Err("unbalanced parenthesis".to_string());
+                    return Err(SortEmpiricalFormulaError::UnbalancedParenthesis);
                 }
 
                 cursor_index += 1;
@@ -219,7 +250,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, String> {
                     });
                     debug!("found atom: {search_atom}");
                 } else {
-                    return Err("unknown atom:{search}".to_string());
+                    return Err(SortEmpiricalFormulaError::UnknowAtom(search_atom));
                 }
 
                 // Updating the cursor.
@@ -250,7 +281,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, String> {
                 // Converting into usize.
                 let count = match count_string.parse::<usize>() {
                     Ok(count) => Some(count),
-                    Err(e) => return Err(format!("can not convert {count_string}: {e}")),
+                    Err(e) => return Err(SortEmpiricalFormulaError::CanNotParseNumber(e)),
                 };
                 debug!("count: {:?}", count);
 
@@ -278,7 +309,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, String> {
                             Some(last_atom_count) => last_atom_count,
                             None => {
                                 // We have a number after no known atom, this is an error.
-                                return Err("found a number after no known atom".to_string());
+                                return Err(SortEmpiricalFormulaError::NumberAfterUnknowAtom);
                             }
                         };
 
@@ -311,9 +342,8 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, String> {
                 Some(atom_count) => *atom_count += atom_block.count,
                 None => {
                     // Should never happen.
-                    return Err(format!(
-                        "unexpected empty atom_count_map value for key {}",
-                        atom_block.atom_name
+                    return Err(SortEmpiricalFormulaError::UnexpectedNoneAtomCount(
+                        atom_block.atom_name.clone(),
                     ));
                 }
             };
