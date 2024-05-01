@@ -31,218 +31,216 @@ pub fn request_filter(request: &str) -> Result<RequestFilter, String> {
     for query_pair in url.query_pairs() {
         debug!("query_pair:{:?}", query_pair);
 
-        match query_pair {
-            (std::borrow::Cow::Borrowed(key), std::borrow::Cow::Borrowed(value)) => match key {
-                "search" => request_filter.search = Some(value.to_string()),
-                "order_by" => request_filter.order_by = Some(value.to_string()),
-                "order" => request_filter.order = value.to_string(),
-                "offset" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.offset = Some(v),
-                    Err(e) => return Err(format!("error with offset query parameter: {e}")),
-                },
-                "limit" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.limit = Some(v),
-                    Err(e) => return Err(format!("error with limit query parameter: {e}")),
-                },
-                "bookmark" => match value.parse::<bool>() {
-                    Ok(v) => request_filter.bookmark = v,
-                    Err(e) => return Err(format!("error with bookmark query parameter: {e}")),
-                },
-                "borrowing" => match value.parse::<bool>() {
-                    Ok(v) => request_filter.borrowing = v,
-                    Err(e) => return Err(format!("error with borrowing query parameter: {e}")),
-                },
-                "cas_number" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.cas_number = Some(v),
-                    Err(e) => return Err(format!("error with cas_number query parameter: {e}")),
-                },
-                "cas_number_cmr" => match value.parse::<bool>() {
-                    Ok(v) => request_filter.cas_number_cmr = v,
-                    Err(e) => {
-                        return Err(format!("error with cas_number_cmr query parameter: {e}"))
-                    }
-                },
-                "category" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.category = Some(v),
-                    Err(e) => return Err(format!("error with category query parameter: {e}")),
-                },
-                "custom_name_part_of" => {
-                    request_filter.custom_name_part_of = Some(value.to_string())
-                }
-                "empirical_formula" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.empirical_formula = Some(v),
-                    Err(e) => {
-                        return Err(format!("error with empirical_formula query parameter: {e}"))
-                    }
-                },
-                "entity" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.entity = Some(v),
-                    Err(e) => return Err(format!("error with entity query parameter: {e}")),
-                },
-                "hazard_statements" => {
-                    if !ids_match.is_match(value) {
-                        return Err(String::from("invalid hazard_statements ids format"));
-                    }
-
-                    let caps = ids_capture.captures_iter(value);
-                    let mut hazard_statement_ids: Vec<u64> = Vec::new();
-                    for cap in caps {
-                        // We can unwrap safely here because of validation (is_match) below.
-                        let id_str = cap.name("id").unwrap().as_str();
-                        let id = id_str.parse::<u64>().unwrap();
-
-                        hazard_statement_ids.push(id);
-                    }
-                    request_filter.hazard_statements = Some(hazard_statement_ids);
-                }
-                "history" => match value.parse::<bool>() {
-                    Ok(v) => request_filter.history = v,
-                    Err(e) => return Err(format!("error with history query parameter: {e}")),
-                },
-                "storages" => {
-                    if !ids_match.is_match(value) {
-                        return Err(String::from("invalid storages ids format"));
-                    }
-
-                    let caps = ids_capture.captures_iter(value);
-                    let mut storage_ids: Vec<u64> = Vec::new();
-                    for cap in caps {
-                        // We can unwrap safely here because of validation (is_match) below.
-                        let id_str = cap.name("id").unwrap().as_str();
-                        let id = id_str.parse::<u64>().unwrap();
-
-                        storage_ids.push(id);
-                    }
-                    request_filter.storages = Some(storage_ids);
-                }
-                "name" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.name = Some(v),
-                    Err(e) => return Err(format!("error with name query parameter: {e}")),
-                },
-                "permission" => request_filter.permission = value.to_string(),
-                "precautionary_statements" => {
-                    if !ids_match.is_match(value) {
-                        return Err(String::from("invalid precautionary_statements ids format"));
-                    }
-
-                    let caps = ids_capture.captures_iter(value);
-                    let mut precautionary_statement_ids: Vec<u64> = Vec::new();
-                    for cap in caps {
-                        // We can unwrap safely here because of validation (is_match) below.
-                        let id_str = cap.name("id").unwrap().as_str();
-                        let id = id_str.parse::<u64>().unwrap();
-
-                        precautionary_statement_ids.push(id);
-                    }
-                    request_filter.precautionary_statements = Some(precautionary_statement_ids);
-                }
-                "producer" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.producer = Some(v),
-                    Err(e) => return Err(format!("error with producer query parameter: {e}")),
-                },
-                "producer_ref" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.producer_ref = Some(v),
-                    Err(e) => return Err(format!("error with producer_ref query parameter: {e}")),
-                },
-                "product" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.product = Some(v),
-                    Err(e) => return Err(format!("error with product query parameter: {e}")),
-                },
-                "product_specificity" => {
-                    request_filter.product_specificity = Some(value.to_string())
-                }
-                "show_bio" => match value.parse::<bool>() {
-                    Ok(v) => request_filter.show_bio = v,
-                    Err(e) => return Err(format!("error with show_bio query parameter: {e}")),
-                },
-                "show_chem" => match value.parse::<bool>() {
-                    Ok(v) => request_filter.show_chem = v,
-                    Err(e) => return Err(format!("error with show_chem query parameter: {e}")),
-                },
-                "show_consu" => match value.parse::<bool>() {
-                    Ok(v) => request_filter.show_consu = v,
-                    Err(e) => return Err(format!("error with show_consu query parameter: {e}")),
-                },
-                "signal_word" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.signal_word = Some(v),
-                    Err(e) => return Err(format!("error with signal_word query parameter: {e}")),
-                },
-                "storage" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.storage = Some(v),
-                    Err(e) => return Err(format!("error with storage query parameter: {e}")),
-                },
-                "storage_archive" => match value.parse::<bool>() {
-                    Ok(v) => request_filter.storage_archive = v,
-                    Err(e) => {
-                        return Err(format!("error with storage_archive query parameter: {e}"))
-                    }
-                },
-                "storage_barecode" => request_filter.storage_barecode = Some(value.to_string()),
-                "storage_batch_number" => {
-                    request_filter.storage_batch_number = Some(value.to_string())
-                }
-                "storage_to_destroy" => match value.parse::<bool>() {
-                    Ok(v) => request_filter.storage_to_destroy = v,
-                    Err(e) => {
-                        return Err(format!(
-                            "error with storage_to_destroy query parameter: {e}"
-                        ))
-                    }
-                },
-                "store_location" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.store_location = Some(v),
-                    Err(e) => {
-                        return Err(format!("error with store_location query parameter: {e}"))
-                    }
-                },
-                "store_location_can_store" => match value.parse::<bool>() {
-                    Ok(v) => request_filter.store_location_can_store = v,
-                    Err(e) => {
-                        return Err(format!(
-                            "error with store_location_can_store query parameter: {e}"
-                        ))
-                    }
-                },
-                "supplier" => match value.parse::<u64>() {
-                    Ok(v) => request_filter.supplier = Some(v),
-                    Err(e) => return Err(format!("error with supplier query parameter: {e}")),
-                },
-                "symbols" => {
-                    if !ids_match.is_match(value) {
-                        return Err(String::from("invalid symbols ids format"));
-                    }
-
-                    let caps = ids_capture.captures_iter(value);
-                    let mut symbol_ids: Vec<u64> = Vec::new();
-                    for cap in caps {
-                        // We can unwrap safely here because of validation (is_match) below.
-                        let id_str = cap.name("id").unwrap().as_str();
-                        let id = id_str.parse::<u64>().unwrap();
-
-                        symbol_ids.push(id)
-                    }
-                    request_filter.symbols = Some(symbol_ids);
-                }
-                "tags" => {
-                    if !ids_match.is_match(value) {
-                        return Err(String::from("invalid tags ids format"));
-                    }
-
-                    let caps = ids_capture.captures_iter(value);
-                    let mut tag_ids: Vec<u64> = Vec::new();
-                    for cap in caps {
-                        // We can unwrap safely here because of validation (is_match) below.
-                        let id_str = cap.name("id").unwrap().as_str();
-                        let id = id_str.parse::<u64>().unwrap();
-
-                        tag_ids.push(id);
-                    }
-                    request_filter.tags = Some(tag_ids);
-                }
-                "unit_type" => request_filter.unit_type = Some(value.to_string()),
-                _ => (),
+        let (key, value) = query_pair;
+        match key {
+            std::borrow::Cow::Borrowed("search") => request_filter.search = Some(value.to_string()),
+            std::borrow::Cow::Borrowed("order_by") => {
+                request_filter.order_by = Some(value.to_string())
+            }
+            std::borrow::Cow::Borrowed("order") => request_filter.order = value.to_string(),
+            std::borrow::Cow::Borrowed("offset") => match value.parse::<u64>() {
+                Ok(v) => request_filter.offset = Some(v),
+                Err(e) => return Err(format!("error with offset query parameter: {e}")),
             },
-            _ => return Err(String::from("error extracting request query parameters")),
+            std::borrow::Cow::Borrowed("limit") => match value.parse::<u64>() {
+                Ok(v) => request_filter.limit = Some(v),
+                Err(e) => return Err(format!("error with limit query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("bookmark") => match value.parse::<bool>() {
+                Ok(v) => request_filter.bookmark = v,
+                Err(e) => return Err(format!("error with bookmark query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("borrowing") => match value.parse::<bool>() {
+                Ok(v) => request_filter.borrowing = v,
+                Err(e) => return Err(format!("error with borrowing query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("cas_number") => match value.parse::<u64>() {
+                Ok(v) => request_filter.cas_number = Some(v),
+                Err(e) => return Err(format!("error with cas_number query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("cas_number_cmr") => match value.parse::<bool>() {
+                Ok(v) => request_filter.cas_number_cmr = v,
+                Err(e) => return Err(format!("error with cas_number_cmr query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("category") => match value.parse::<u64>() {
+                Ok(v) => request_filter.category = Some(v),
+                Err(e) => return Err(format!("error with category query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("custom_name_part_of") => {
+                request_filter.custom_name_part_of = Some(value.to_string())
+            }
+            std::borrow::Cow::Borrowed("empirical_formula") => match value.parse::<u64>() {
+                Ok(v) => request_filter.empirical_formula = Some(v),
+                Err(e) => return Err(format!("error with empirical_formula query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("entity") => match value.parse::<u64>() {
+                Ok(v) => request_filter.entity = Some(v),
+                Err(e) => return Err(format!("error with entity query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("hazard_statements") => {
+                if !ids_match.is_match(&value) {
+                    return Err(String::from("invalid hazard_statements ids format"));
+                }
+
+                let caps = ids_capture.captures_iter(&value);
+                let mut hazard_statement_ids: Vec<u64> = Vec::new();
+                for cap in caps {
+                    // We can unwrap safely here because of validation (is_match) below.
+                    let id_str = cap.name("id").unwrap().as_str();
+                    let id = id_str.parse::<u64>().unwrap();
+
+                    hazard_statement_ids.push(id);
+                }
+                request_filter.hazard_statements = Some(hazard_statement_ids);
+            }
+            std::borrow::Cow::Borrowed("history") => match value.parse::<bool>() {
+                Ok(v) => request_filter.history = v,
+                Err(e) => return Err(format!("error with history query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("storages") => {
+                if !ids_match.is_match(&value) {
+                    return Err(String::from("invalid storages ids format"));
+                }
+
+                let caps = ids_capture.captures_iter(&value);
+                let mut storage_ids: Vec<u64> = Vec::new();
+                for cap in caps {
+                    // We can unwrap safely here because of validation (is_match) below.
+                    let id_str = cap.name("id").unwrap().as_str();
+                    let id = id_str.parse::<u64>().unwrap();
+
+                    storage_ids.push(id);
+                }
+                request_filter.storages = Some(storage_ids);
+            }
+            std::borrow::Cow::Borrowed("name") => match value.parse::<u64>() {
+                Ok(v) => request_filter.name = Some(v),
+                Err(e) => return Err(format!("error with name query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("permission") => {
+                request_filter.permission = value.to_string()
+            }
+            std::borrow::Cow::Borrowed("precautionary_statements") => {
+                if !ids_match.is_match(&value) {
+                    return Err(String::from("invalid precautionary_statements ids format"));
+                }
+
+                let caps = ids_capture.captures_iter(&value);
+                let mut precautionary_statement_ids: Vec<u64> = Vec::new();
+                for cap in caps {
+                    // We can unwrap safely here because of validation (is_match) below.
+                    let id_str = cap.name("id").unwrap().as_str();
+                    let id = id_str.parse::<u64>().unwrap();
+
+                    precautionary_statement_ids.push(id);
+                }
+                request_filter.precautionary_statements = Some(precautionary_statement_ids);
+            }
+            std::borrow::Cow::Borrowed("producer") => match value.parse::<u64>() {
+                Ok(v) => request_filter.producer = Some(v),
+                Err(e) => return Err(format!("error with producer query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("producer_ref") => match value.parse::<u64>() {
+                Ok(v) => request_filter.producer_ref = Some(v),
+                Err(e) => return Err(format!("error with producer_ref query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("product") => match value.parse::<u64>() {
+                Ok(v) => request_filter.product = Some(v),
+                Err(e) => return Err(format!("error with product query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("product_specificity") => {
+                request_filter.product_specificity = Some(value.to_string())
+            }
+            std::borrow::Cow::Borrowed("show_bio") => match value.parse::<bool>() {
+                Ok(v) => request_filter.show_bio = v,
+                Err(e) => return Err(format!("error with show_bio query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("show_chem") => match value.parse::<bool>() {
+                Ok(v) => request_filter.show_chem = v,
+                Err(e) => return Err(format!("error with show_chem query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("show_consu") => match value.parse::<bool>() {
+                Ok(v) => request_filter.show_consu = v,
+                Err(e) => return Err(format!("error with show_consu query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("signal_word") => match value.parse::<u64>() {
+                Ok(v) => request_filter.signal_word = Some(v),
+                Err(e) => return Err(format!("error with signal_word query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("storage") => match value.parse::<u64>() {
+                Ok(v) => request_filter.storage = Some(v),
+                Err(e) => return Err(format!("error with storage query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("storage_archive") => match value.parse::<bool>() {
+                Ok(v) => request_filter.storage_archive = v,
+                Err(e) => return Err(format!("error with storage_archive query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("storage_barecode") => {
+                request_filter.storage_barecode = Some(value.to_string())
+            }
+            std::borrow::Cow::Borrowed("storage_batch_number") => {
+                request_filter.storage_batch_number = Some(value.to_string())
+            }
+            std::borrow::Cow::Borrowed("storage_to_destroy") => match value.parse::<bool>() {
+                Ok(v) => request_filter.storage_to_destroy = v,
+                Err(e) => {
+                    return Err(format!(
+                        "error with storage_to_destroy query parameter: {e}"
+                    ))
+                }
+            },
+            std::borrow::Cow::Borrowed("store_location") => match value.parse::<u64>() {
+                Ok(v) => request_filter.store_location = Some(v),
+                Err(e) => return Err(format!("error with store_location query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("store_location_can_store") => match value.parse::<bool>() {
+                Ok(v) => request_filter.store_location_can_store = v,
+                Err(e) => {
+                    return Err(format!(
+                        "error with store_location_can_store query parameter: {e}"
+                    ))
+                }
+            },
+            std::borrow::Cow::Borrowed("supplier") => match value.parse::<u64>() {
+                Ok(v) => request_filter.supplier = Some(v),
+                Err(e) => return Err(format!("error with supplier query parameter: {e}")),
+            },
+            std::borrow::Cow::Borrowed("symbols") => {
+                if !ids_match.is_match(&value) {
+                    return Err(String::from("invalid symbols ids format"));
+                }
+
+                let caps = ids_capture.captures_iter(&value);
+                let mut symbol_ids: Vec<u64> = Vec::new();
+                for cap in caps {
+                    // We can unwrap safely here because of validation (is_match) below.
+                    let id_str = cap.name("id").unwrap().as_str();
+                    let id = id_str.parse::<u64>().unwrap();
+
+                    symbol_ids.push(id)
+                }
+                request_filter.symbols = Some(symbol_ids);
+            }
+            std::borrow::Cow::Borrowed("tags") => {
+                if !ids_match.is_match(&value) {
+                    return Err(String::from("invalid tags ids format"));
+                }
+
+                let caps = ids_capture.captures_iter(&value);
+                let mut tag_ids: Vec<u64> = Vec::new();
+                for cap in caps {
+                    // We can unwrap safely here because of validation (is_match) below.
+                    let id_str = cap.name("id").unwrap().as_str();
+                    let id = id_str.parse::<u64>().unwrap();
+
+                    tag_ids.push(id);
+                }
+                request_filter.tags = Some(tag_ids);
+            }
+            std::borrow::Cow::Borrowed("unit_type") => {
+                request_filter.unit_type = Some(value.to_string())
+            }
+            _ => (),
         }
     }
 
@@ -259,7 +257,7 @@ mod tests {
     }
 
     #[test]
-    fn test_request_filter_ok() {
+    fn test_request_filter() {
         init_logger();
 
         // Valid values.
@@ -378,17 +376,6 @@ mod tests {
             "store_location",
             "supplier",
         ];
-        // let param_string = vec![
-        //     "search",
-        //     "order_by",
-        //     "order",
-        //     "custom_name_part_of",
-        //     "permission",
-        //     "product_specificity",
-        //     "storage_barecode",
-        //     "storage_batch_number",
-        //     "unit_type",
-        // ];
         let param_bool = vec![
             "bookmark",
             "borrowing",
@@ -421,12 +408,6 @@ mod tests {
             assert!(filter.is_err());
         }
 
-        // for param in param_string {
-        //     // test empty string
-        //     let filter = request_filter(&format!("http://localhost/?{param}="));
-        //     assert!(filter.is_err());
-        // }
-
         for param in param_vec_int {
             // test not digit
             let filter = request_filter(&format!("http://localhost/?{param}=A"));
@@ -439,5 +420,11 @@ mod tests {
             let filter = request_filter(&format!("http://localhost/?{param}=1;2"));
             assert!(filter.is_err());
         }
+
+        // Search with URL encoded spaces.
+        let filter = request_filter("http://localhost/?search=acide+chlor");
+        assert!(filter.is_ok());
+        let filter = request_filter("http://localhost/?search=acide%20chlor");
+        assert!(filter.is_ok());
     }
 }
