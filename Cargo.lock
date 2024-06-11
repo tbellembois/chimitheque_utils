@@ -130,15 +130,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "chimitheque_traits"
+version = "0.1.0"
+
+[[package]]
 name = "chimitheque_types"
 version = "0.1.0"
 dependencies = [
+ "chimitheque_traits",
  "env_logger",
  "jsonpath-rust 0.3.5",
  "log",
  "regex",
  "serde",
  "serde_json",
+ "url",
 ]
 
 [[package]]
