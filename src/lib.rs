@@ -1,3 +1,4 @@
+pub mod casbin;
 pub mod casnumber;
 pub mod cenumber;
 pub mod formula;
