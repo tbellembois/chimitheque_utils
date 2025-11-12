@@ -182,33 +182,33 @@ pub struct RecordContent {
     information: Option<Vec<Information>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename = "Prop_value")]
-enum PropValue {
-    #[serde(rename = "ival")]
-    Ival(isize),
-    #[serde(rename = "fval")]
-    Fval(f64),
-    #[serde(rename = "binary")]
-    Binary(String),
-    #[serde(rename = "sval")]
-    Sval(String),
-}
+// #[derive(Serialize, Deserialize, Debug)]
+// #[serde(rename = "Prop_value")]
+// enum PropValue {
+//     #[serde(rename = "ival")]
+//     Ival(isize),
+//     #[serde(rename = "fval")]
+//     Fval(f64),
+//     #[serde(rename = "binary")]
+//     Binary(String),
+//     #[serde(rename = "sval")]
+//     Sval(String),
+// }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename = "Prop_URN")]
-pub struct PropURN {
-    label: String,
+// #[derive(Serialize, Deserialize, Debug)]
+// #[serde(rename = "Prop_URN")]
+// pub struct PropURN {
+//     label: String,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
-}
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     name: Option<String>,
+// }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Prop {
-    urn: PropURN,
-    value: PropValue,
-}
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct Prop {
+//     urn: PropURN,
+//     value: PropValue,
+// }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Record {
@@ -216,32 +216,32 @@ pub struct Record {
     pub(crate) record: RecordContent,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Cid {
-    cid: usize,
-}
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct Cid {
+//     cid: usize,
+// }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ID {
-    id: Cid,
-}
+// #[derive(Serialize, Deserialize, Debug)]
+// pub struct ID {
+//     id: Cid,
+// }
 
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename = "PC_Compound")]
-pub struct PCCompound {
-    id: ID,
-    props: Vec<Prop>,
-    record: Option<Record>,
-}
+// #[derive(Serialize, Deserialize, Debug)]
+// #[serde(rename = "PC_Compound")]
+// pub struct PCCompound {
+//     id: ID,
+//     props: Vec<Prop>,
+//     record: Option<Record>,
+// }
 
-#[derive(Serialize, Deserialize, Debug, Default)]
-pub struct Compounds {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) record: Option<Record>,
+// #[derive(Serialize, Deserialize, Debug, Default)]
+// pub struct Compounds {
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub(crate) record: Option<Record>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) base64_png: Option<String>,
-}
+//     #[serde(skip_serializing_if = "Option::is_none")]
+//     pub(crate) base64_png: Option<String>,
+// }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Property {
