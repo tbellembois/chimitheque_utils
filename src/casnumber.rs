@@ -1,20 +1,42 @@
+use std::{
+    error::Error,
+    fmt::{Display, Formatter},
+};
+
 use log::debug;
 use regex::Regex;
 
+#[derive(Debug, PartialEq)]
+pub enum CasNumberError {
+    DigitGroupsCaptureError,
+    CharTodigitConversionerror(char),
+    NoCheckDigitFound,
+}
+
+impl Display for CasNumberError {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        match &self {
+            CasNumberError::DigitGroupsCaptureError => write!(f, "can not capture digit groups"),
+            CasNumberError::CharTodigitConversionerror(char) => {
+                write!(f, "can not convert {char} into digit")
+            }
+            CasNumberError::NoCheckDigitFound => write!(f, "no check digit found"),
+        }
+    }
+}
+
+impl std::error::Error for CasNumberError {}
+
 // https://en.wikipedia.org/wiki/CAS_Registry_Number
-pub fn is_cas_number(number: &str) -> Result<bool, String> {
+pub fn is_cas_number(number: &str) -> Result<bool, Box<dyn Error>> {
     // Build regex.
-    let re =
-        match Regex::new(r"^(?P<group1>[0-9]{2,7})-(?P<group2>[0-9]{2})-(?P<checkdigit>[0-9]{1})$")
-        {
-            Ok(re) => re,
-            Err(e) => return Err(format!("invalid regex: {}", e)),
-        };
+    let re = Regex::new(r"^(?P<group1>[0-9]{2,7})-(?P<group2>[0-9]{2})-(?P<checkdigit>[0-9]{1})$")
+        .unwrap();
 
     // Capture groups and check number.
     let captures = match re.captures(number) {
         Some(captures) => captures,
-        None => return Err("can not capture digit groups".to_string()),
+        None => return Err(Box::new(CasNumberError::DigitGroupsCaptureError)),
     };
 
     let group1 = &captures["group1"];
@@ -33,7 +55,11 @@ pub fn is_cas_number(number: &str) -> Result<bool, String> {
     for digit_char in group2_reversed.chars() {
         let digit = match digit_char.to_digit(10) {
             Some(digit) => digit,
-            None => return Err(format!("can not convert {digit_char} into digit")),
+            None => {
+                return Err(Box::new(CasNumberError::CharTodigitConversionerror(
+                    digit_char,
+                )))
+            }
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -45,7 +71,11 @@ pub fn is_cas_number(number: &str) -> Result<bool, String> {
     for digit_char in group1_reversed.chars() {
         let digit = match digit_char.to_digit(10) {
             Some(digit) => digit,
-            None => return Err(format!("can not convert {digit_char} into digit")),
+            None => {
+                return Err(Box::new(CasNumberError::CharTodigitConversionerror(
+                    digit_char,
+                )))
+            }
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -59,21 +89,25 @@ pub fn is_cas_number(number: &str) -> Result<bool, String> {
     if let Some(digit_char) = checkdigit_char.chars().next() {
         let digit = match digit_char.to_digit(10) {
             Some(digit) => digit,
-            None => return Err(format!("can not convert {digit_char} into digit")),
+            None => {
+                return Err(Box::new(CasNumberError::CharTodigitConversionerror(
+                    digit_char,
+                )))
+            }
         };
 
         Ok(digit.eq(&modulo))
     } else {
-        Err("not check digit found".to_string())
+        Err(Box::new(CasNumberError::NoCheckDigitFound))
     }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use log::info;
-
     use super::*;
+    use dyn_error::*;
+    use log::info;
 
     fn init_logger() {
         let _ = env_logger::builder().is_test(true).try_init();
@@ -95,15 +129,13 @@ mod tests {
 
         for cas_number in cas_numbers {
             info!("processing {cas_number}");
-            assert_eq!(
-                is_cas_number(cas_number),
-                Err("can not capture digit groups".to_string())
-            );
+            let result = is_cas_number(cas_number);
+            assert_err_box!(result, CasNumberError::DigitGroupsCaptureError);
         }
 
         // Check digit test.
-        assert_eq!(is_cas_number("100-00-6"), Ok(false));
-        assert_eq!(is_cas_number("123-45-6"), Ok(false));
+        assert!(!is_cas_number("100-00-6").unwrap());
+        assert!(!is_cas_number("123-45-6").unwrap());
     }
 
     #[test]
@@ -292,7 +324,7 @@ mod tests {
 
         for cas_number in cas_numbers {
             info!("processing {cas_number}");
-            assert_eq!(is_cas_number(cas_number), Ok(true));
+            assert!(is_cas_number(cas_number).unwrap());
         }
     }
 }

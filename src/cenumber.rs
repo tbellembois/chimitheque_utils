@@ -1,19 +1,42 @@
+use std::{
+    error::Error,
+    fmt::{Display, Formatter},
+};
+
 use log::debug;
 use regex::Regex;
 
+#[derive(Debug, PartialEq)]
+pub enum CeNumberError {
+    DigitGroupsCaptureError,
+    CharTodigitConversionerror(char),
+    NoCheckDigitFound,
+}
+
+impl Display for CeNumberError {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        match &self {
+            CeNumberError::DigitGroupsCaptureError => write!(f, "can not capture digit groups"),
+            CeNumberError::CharTodigitConversionerror(char) => {
+                write!(f, "can not convert {char} into digit")
+            }
+            CeNumberError::NoCheckDigitFound => write!(f, "no check digit found"),
+        }
+    }
+}
+
+impl std::error::Error for CeNumberError {}
+
 // https://en.wikipedia.org/wiki/European_Community_number
-pub fn is_ce_number(number: &str) -> Result<bool, String> {
+pub fn is_ce_number(number: &str) -> Result<bool, Box<dyn Error>> {
     // Build regex.
-    let re =
-        match Regex::new(r"^(?P<group1>[0-9]{3})-(?P<group2>[0-9]{3})-(?P<checkdigit>[0-9]{1})$") {
-            Ok(re) => re,
-            Err(e) => return Err(format!("invalid regex: {}", e)),
-        };
+    let re = Regex::new(r"^(?P<group1>[0-9]{3})-(?P<group2>[0-9]{3})-(?P<checkdigit>[0-9]{1})$")
+        .unwrap();
 
     // Capture groups and check number.
     let captures = match re.captures(number) {
         Some(captures) => captures,
-        None => return Err("can not capture digit groups".to_string()),
+        None => return Err(Box::new(CeNumberError::DigitGroupsCaptureError)),
     };
 
     let group1 = &captures["group1"];
@@ -30,7 +53,11 @@ pub fn is_ce_number(number: &str) -> Result<bool, String> {
     for digit_char in group1.chars() {
         let digit = match digit_char.to_digit(10) {
             Some(digit) => digit,
-            None => return Err(format!("can not convert {digit_char} into digit")),
+            None => {
+                return Err(Box::new(CeNumberError::CharTodigitConversionerror(
+                    digit_char,
+                )))
+            }
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -40,7 +67,11 @@ pub fn is_ce_number(number: &str) -> Result<bool, String> {
     for digit_char in group2.chars() {
         let digit = match digit_char.to_digit(10) {
             Some(digit) => digit,
-            None => return Err(format!("can not convert {digit_char} into digit")),
+            None => {
+                return Err(Box::new(CeNumberError::CharTodigitConversionerror(
+                    digit_char,
+                )))
+            }
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -54,21 +85,25 @@ pub fn is_ce_number(number: &str) -> Result<bool, String> {
     if let Some(digit_char) = checkdigit_char.chars().next() {
         let digit = match digit_char.to_digit(10) {
             Some(digit) => digit,
-            None => return Err(format!("can not convert {digit_char} into digit")),
+            None => {
+                return Err(Box::new(CeNumberError::CharTodigitConversionerror(
+                    digit_char,
+                )))
+            }
         };
 
         Ok(digit.eq(&modulo))
     } else {
-        Err("not check digit found".to_string())
+        Err(Box::new(CeNumberError::NoCheckDigitFound))
     }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use log::info;
-
     use super::*;
+    use dyn_error::*;
+    use log::info;
 
     fn init_logger() {
         let _ = env_logger::builder().is_test(true).try_init();
@@ -90,15 +125,13 @@ mod tests {
 
         for ce_number in ce_numbers {
             info!("processing {ce_number}");
-            assert_eq!(
-                is_ce_number(ce_number),
-                Err("can not capture digit groups".to_string())
-            );
+            let result = is_ce_number(ce_number);
+            assert_err_box!(result, CeNumberError::DigitGroupsCaptureError);
         }
 
         // Check digit test.
-        assert_eq!(is_ce_number("214-480-7"), Ok(false));
-        assert_eq!(is_ce_number("200-419-1"), Ok(false));
+        assert!(!is_ce_number("214-480-7").unwrap());
+        assert!(!is_ce_number("200-419-1").unwrap());
     }
 
     #[test]
@@ -264,7 +297,7 @@ mod tests {
 
         for ce_number in ce_numbers {
             info!("processing {ce_number}");
-            assert_eq!(is_ce_number(ce_number), Ok(true));
+            assert!(is_ce_number(ce_number).unwrap());
         }
     }
 }

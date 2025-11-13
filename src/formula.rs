@@ -1,6 +1,7 @@
 use log::debug;
 use std::{
     collections::HashMap,
+    error::Error,
     fmt::{Display, Formatter},
     num::ParseIntError,
 };
@@ -47,7 +48,7 @@ impl std::error::Error for SortEmpiricalFormulaError {}
 // note: if a multiplier is not a digit return an error (can not convert)
 // Returns the empirical formula from "formula".
 // Only operates on basic formulas.
-pub fn sort_empirical_formula(formula: &str) -> Result<String, SortEmpiricalFormulaError> {
+pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error>> {
     let periodic_table = HashMap::from([
         ("Ac", "actinium"),
         ("Ag", "silver"),
@@ -216,7 +217,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, SortEmpiricalForm
                 parenthesis_depth -= 1;
                 // Check wrong parenthesis number.
                 if parenthesis_depth < 0 {
-                    return Err(SortEmpiricalFormulaError::UnbalancedParenthesis);
+                    return Err(Box::new(SortEmpiricalFormulaError::UnbalancedParenthesis));
                 }
 
                 cursor_index += 1;
@@ -250,7 +251,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, SortEmpiricalForm
                     });
                     debug!("found atom: {search_atom}");
                 } else {
-                    return Err(SortEmpiricalFormulaError::UnknowAtom(search_atom));
+                    return Err(Box::new(SortEmpiricalFormulaError::UnknowAtom(search_atom)));
                 }
 
                 // Updating the cursor.
@@ -281,7 +282,9 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, SortEmpiricalForm
                 // Converting into usize.
                 let count = match count_string.parse::<usize>() {
                     Ok(count) => Some(count),
-                    Err(e) => return Err(SortEmpiricalFormulaError::CanNotParseNumber(e)),
+                    Err(e) => {
+                        return Err(Box::new(SortEmpiricalFormulaError::CanNotParseNumber(e)))
+                    }
                 };
                 debug!("count: {:?}", count);
 
@@ -309,7 +312,9 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, SortEmpiricalForm
                             Some(last_atom_count) => last_atom_count,
                             None => {
                                 // We have a number after no known atom, this is an error.
-                                return Err(SortEmpiricalFormulaError::NumberAfterUnknowAtom);
+                                return Err(Box::new(
+                                    SortEmpiricalFormulaError::NumberAfterUnknowAtom,
+                                ));
                             }
                         };
 
@@ -342,8 +347,10 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, SortEmpiricalForm
                 Some(atom_count) => *atom_count += atom_block.count,
                 None => {
                     // Should never happen.
-                    return Err(SortEmpiricalFormulaError::UnexpectedNoneAtomCount(
-                        atom_block.atom_name.clone(),
+                    return Err(Box::new(
+                        SortEmpiricalFormulaError::UnexpectedNoneAtomCount(
+                            atom_block.atom_name.clone(),
+                        ),
                     ));
                 }
             };
@@ -585,7 +592,10 @@ mod tests {
         ];
 
         for formula in empirical_formulas {
-            assert_eq!(sort_empirical_formula(formula), Ok(formula.to_string()));
+            assert_eq!(
+                sort_empirical_formula(formula).unwrap(),
+                formula.to_string()
+            );
         }
 
         let linear_formulas = vec![
