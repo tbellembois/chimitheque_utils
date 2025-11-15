@@ -36,8 +36,8 @@ pub fn build_casbin_matchers() {
     ( (r.item == "storages" && r.action == "d") &&  (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" ||matchStorageIsInEntity(r.item_id,p.entity_id)) ) || \
     \
     ( (r.item == "store_locations" && r.action == "c") &&  (p.item == "entities" || p.item =="all") ) || \
-    ( (r.item == "store_locations" && r.action == "r" && r.item_id == "") &&  (p.item == "entities" || p.item =="all") ) || \
-    ( (r.item == "store_locations" && r.action == "r" && r.item_id != "") &&  (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id)) ) || \
+    ( (r.item == "store_locations" && r.action == "r" && r.item_id == "") &&  (p.item == "storages" || p.item =="all") ) || \
+    ( (r.item == "store_locations" && r.action == "r" && r.item_id != "") &&  (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id)) ) || \
     ( (r.item == "store_locations" && r.action == "u") &&  (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id)) ) || \
     ( (r.item == "store_locations" && r.action == "d") &&  (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id)) && !matchStoreLocationHasChildren(r.item_id) && !matchStoreLocationHasStorages(r.item_id) ) || \
     \
