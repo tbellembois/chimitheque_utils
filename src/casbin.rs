@@ -17,35 +17,35 @@ pub fn build_casbin_matchers() {
         )"#;
     // Permissions definition.
     let rules_match = r#"\
-    ( (r.item == "products" && r.action == "c") &&  (p.item == "products" || p.item =="all") ) || \
-    ( (r.item == "products" && r.action == "r" && r.item_id == "") &&  (p.item == "products" || p.item =="all") ) || \
-    ( (r.item == "products" && r.action == "r" && r.item_id != "") &&  (p.item == "products" || p.item =="all") ) || \
-    ( (r.item == "products" && r.action == "u") &&  (p.item == "products" || p.item =="all") ) || \
-    ( (r.item == "products" && r.action == "d") &&  (p.item == "products" || p.item =="all") && !matchProductHasStorages(r.item_id) ) || \
+    ( (r.item == "products" && r.action == "c")                    && (p.item == "products" || p.item =="all") ) || \
+    ( (r.item == "products" && r.action == "r" && r.item_id == "") && (p.item == "products" || p.item =="all") ) || \
+    ( (r.item == "products" && r.action == "r" && r.item_id != "") && (p.item == "products" || p.item =="all") ) || \
+    ( (r.item == "products" && r.action == "u")                    && (p.item == "products" || p.item =="all") ) || \
+    ( (r.item == "products" && r.action == "d")                    && (p.item == "products" || p.item =="all") && !matchProductHasStorages(r.item_id) ) || \
     \
-    ( (r.item == "rproducts" && r.action == "c") &&  (p.item == "rproducts" || p.item =="all") ) || \
-    ( (r.item == "rproducts" && r.action == "r" && r.item_id == "") &&  (p.item == "rproducts" || p.item =="all") ) || \
-    ( (r.item == "rproducts" && r.action == "r" && r.item_id != "") &&  (p.item == "rproducts" || p.item =="all") ) || \
-    ( (r.item == "rproducts" && r.action == "u") &&  (p.item == "rproducts" || p.item =="all") ) || \
-    ( (r.item == "rproducts" && r.action == "d") &&  (p.item == "rproducts" || p.item =="all") && !matchProductHasStorages(r.item_id) ) || \
+    ( (r.item == "rproducts" && r.action == "c")                    && (p.item == "rproducts" || p.item =="all") ) || \
+    ( (r.item == "rproducts" && r.action == "r" && r.item_id == "") && (p.item == "rproducts" || p.item =="all") ) || \
+    ( (r.item == "rproducts" && r.action == "r" && r.item_id != "") && (p.item == "rproducts" || p.item =="all") ) || \
+    ( (r.item == "rproducts" && r.action == "u")                    && (p.item == "rproducts" || p.item =="all") ) || \
+    ( (r.item == "rproducts" && r.action == "d")                    && (p.item == "rproducts" || p.item =="all") && !matchProductHasStorages(r.item_id) ) || \
     \
-    ( (r.item == "storages" && r.action == "c") &&  (p.item == "storages" || p.item =="all") ) || \
-    ( (r.item == "storages" && r.action == "r" && r.item_id == "") &&  (p.item == "storages" || p.item =="all") ) || \
-    ( (r.item == "storages" && r.action == "r" && r.item_id != "") &&  (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" || matchStorageIsInEntity(r.item_id,p.entity_id)) ) || \
-    ( (r.item == "storages" && r.action == "u") &&  (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" || matchStorageIsInEntity(r.item_id,p.entity_id)) ) || \
-    ( (r.item == "storages" && r.action == "d") &&  (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" ||matchStorageIsInEntity(r.item_id,p.entity_id)) ) || \
+    ( (r.item == "storages" && r.action == "c")                    && (p.item == "storages" || p.item =="all") ) || \
+    ( (r.item == "storages" && r.action == "r" && r.item_id == "") && (p.item == "storages" || p.item =="all") ) || \
+    ( (r.item == "storages" && r.action == "r" && r.item_id != "") && (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" || matchStorageIsInEntity(r.item_id,p.entity_id)) ) || \
+    ( (r.item == "storages" && r.action == "u")                    && (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" || matchStorageIsInEntity(r.item_id,p.entity_id)) ) || \
+    ( (r.item == "storages" && r.action == "d")                    && (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" ||matchStorageIsInEntity(r.item_id,p.entity_id)) ) || \
     \
-    ( (r.item == "store_locations" && r.action == "c") &&  (p.item == "entities" || p.item =="all") ) || \
+    ( (r.item == "store_locations" && r.action == "c")                    && (p.item == "entities" || p.item =="all") ) || \
     ( (r.item == "store_locations" && r.action == "r" && r.item_id == "") &&  (p.item == "storages" || p.item =="all") ) || \
     ( (r.item == "store_locations" && r.action == "r" && r.item_id != "") &&  (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id)) ) || \
-    ( (r.item == "store_locations" && r.action == "u") &&  (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id)) ) || \
-    ( (r.item == "store_locations" && r.action == "d") &&  (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id)) && !matchStoreLocationHasChildren(r.item_id) && !matchStoreLocationHasStorages(r.item_id) ) || \
+    ( (r.item == "store_locations" && r.action == "u")                    && (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id)) ) || \
+    ( (r.item == "store_locations" && r.action == "d")                    && (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id)) && !matchStoreLocationHasChildren(r.item_id) && !matchStoreLocationHasStorages(r.item_id) ) || \
     \
-    ( (r.item == "people" && r.action == "c") &&  (p.item == "entities" || p.item =="all") ) || \
-    ( (r.item == "people" && r.action == "r" && r.item_id == "") &&  (p.item == "entities" || p.item =="all") ) || \
-    ( (r.item == "people" && r.action == "r" && r.item_id != "") &&  (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchPersonIsInEntity(r.item_id,p.entity_id)) ) || \
-    ( (r.item == "people" && r.action == "u") &&  (p.item == "entities" || p.item == "all") && (p.entity_id == "-1" || matchPersonIsInEntity(r.item_id,p.entity_id)) && !matchPersonIsAdmin(r.item_id) ) || \
-    ( (r.item == "people" && r.action == "d") &&  (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchPersonIsInEntity(r.item_id,p.entity_id)) && !matchPersonIsManager(r.item_id) && !matchPersonIsAdmin(r.item_id) ) || \
+    ( (r.item == "people" && r.action == "c")                    && (p.item == "entities" || p.item =="all") ) || \
+    ( (r.item == "people" && r.action == "r" && r.item_id == "") && (p.item == "entities" || p.item =="all") ) || \
+    ( (r.item == "people" && r.action == "r" && r.item_id != "") && (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchPersonIsInEntity(r.item_id,p.entity_id)) ) || \
+    ( (r.item == "people" && r.action == "u")                    && (p.item == "entities" || p.item == "all") && (p.entity_id == "-1" || matchPersonIsInEntity(r.item_id,p.entity_id)) && !matchPersonIsAdmin(r.item_id) ) || \
+    ( (r.item == "people" && r.action == "d")                    && (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchPersonIsInEntity(r.item_id,p.entity_id)) && !matchPersonIsManager(r.item_id) && !matchPersonIsAdmin(r.item_id) ) || \
     \
     ( (r.item == "entities" && r.action == "c")                    && (p.perm == "all" && p.entity_id == "-1" && p.item == "all") ) || \
     ( (r.item == "entities" && r.action == "r" && r.item_id == "") && (p.item == "entities" || p.item =="all") ) || \
@@ -55,7 +55,7 @@ pub fn build_casbin_matchers() {
     \
     ( (r.item == "bookmarks" || r.item == "download" || r.item == "validate") && (p.item == "products" || p.item =="all") ) || \
     \
-    ( (r.item == "userinfo" || r.item == "ping") ) || \
+    ( (r.item == "userinfo" || r.item == "ping") && (p.item == "products" || p.item =="all") ) || \
     \
     ( (r.item == "stocks" && r.action == "r") && (p.item == "storages" || p.item =="all") )"#;
     println!(
