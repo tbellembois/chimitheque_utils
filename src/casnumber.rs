@@ -27,7 +27,8 @@ impl Display for CasNumberError {
 
 impl std::error::Error for CasNumberError {}
 
-// https://en.wikipedia.org/wiki/CAS_Registry_Number
+/// <https://en.wikipedia.org/wiki/CAS_Registry_Number>
+/// Check if a string is a valid CAS number.
 pub fn is_cas_number(number: &str) -> Result<bool, Box<dyn Error>> {
     // Build regex.
     let re = Regex::new(r"^(?P<group1>[0-9]{2,7})-(?P<group2>[0-9]{2})-(?P<checkdigit>[0-9]{1})$")

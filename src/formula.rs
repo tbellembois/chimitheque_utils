@@ -33,21 +33,20 @@ impl Display for SortEmpiricalFormulaError {
 
 impl std::error::Error for SortEmpiricalFormulaError {}
 
-// Cl(CaC2(NaCl)3)2.Na=P
-// ^^. .. . . .. . .      Cl c=1 d=0
-//   ^ .. . . .. . .      depth=1
-//    ^^. . . .. . .      Ca c=1 d=1
-//      ^ . . .. . .      C  c=2 d=1
-//        ^ . .. . .      depth=2
-//         ^^ .. . .      Na c=1 d=2
-//           ^^. . .      Cl c=1 d=2
-//             ^ . .      for each d>=2 multiply atom by 3; (Na c=3 Cl c=3) depth=1
-//               ^ .      for each d>=1 multiply atom by 2; (Na c=6 Cl c=6 ; Ca=2 C=2) depth=0
-//                 ^      forget any other char
-//
-// note: if a multiplier is not a digit return an error (can not convert)
-// Returns the empirical formula from "formula".
-// Only operates on basic formulas.
+/// Sorts the empirical formula from a string.
+/// Sort order: C and H atoms then the others in alphabetical order.
+/// Example of parsing method:
+/// Cl(CaC2(NaCl)3)2.Na=P
+/// ^^. .. . . .. . .      Cl c=1 d=0
+///   ^ .. . . .. . .      depth=1
+///    ^^. . . .. . .      Ca c=1 d=1
+///      ^ . . .. . .      C  c=2 d=1
+///        ^ . .. . .      depth=2
+///         ^^ .. . .      Na c=1 d=2
+///           ^^. . .      Cl c=1 d=2
+///             ^ . .      for each d>=2 multiply atom by 3; (Na c=3 Cl c=3) depth=1
+///               ^ .      for each d>=1 multiply atom by 2; (Na c=6 Cl c=6 ; Ca=2 C=2) depth=0
+///                 ^      forget any other char
 pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error>> {
     let periodic_table = HashMap::from([
         ("Ac", "actinium"),

@@ -4,6 +4,8 @@ pub enum Transform {
     Lowercase,
 }
 
+/// Cleans a string by trimming whitespaces and replacing multiple spaces with a single space.
+/// Optionally, it can convert the string to uppercase or lowercase.
 pub fn clean(s: &str, transform: Transform) -> String {
     let mut result: String;
 

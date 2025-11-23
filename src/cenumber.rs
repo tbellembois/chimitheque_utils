@@ -27,7 +27,8 @@ impl Display for CeNumberError {
 
 impl std::error::Error for CeNumberError {}
 
-// https://en.wikipedia.org/wiki/European_Community_number
+/// <https://en.wikipedia.org/wiki/European_Community_number>
+/// Check if a string is a valid European Community number.
 pub fn is_ce_number(number: &str) -> Result<bool, Box<dyn Error>> {
     // Build regex.
     let re = Regex::new(r"^(?P<group1>[0-9]{3})-(?P<group2>[0-9]{3})-(?P<checkdigit>[0-9]{1})$")
