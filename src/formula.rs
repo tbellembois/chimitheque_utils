@@ -47,7 +47,7 @@ impl std::error::Error for SortEmpiricalFormulaError {}
 ///             ^ . .      for each d>=2 multiply atom by 3; (Na c=3 Cl c=3) depth=1
 ///               ^ .      for each d>=1 multiply atom by 2; (Na c=6 Cl c=6 ; Ca=2 C=2) depth=0
 ///                 ^      forget any other char
-pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error>> {
+pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
     let periodic_table = HashMap::from([
         ("Ac", "actinium"),
         ("Ag", "silver"),

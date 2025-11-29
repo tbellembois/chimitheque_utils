@@ -1,7 +1,4 @@
-use std::{
-    error::Error,
-    fmt::{Display, Formatter},
-};
+use std::fmt::{Display, Formatter};
 
 use log::debug;
 use regex::Regex;
@@ -29,7 +26,7 @@ impl std::error::Error for CeNumberError {}
 
 /// <https://en.wikipedia.org/wiki/European_Community_number>
 /// Check if a string is a valid European Community number.
-pub fn is_ce_number(number: &str) -> Result<bool, Box<dyn Error>> {
+pub fn is_ce_number(number: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
     // Build regex.
     let re = Regex::new(r"^(?P<group1>[0-9]{3})-(?P<group2>[0-9]{3})-(?P<checkdigit>[0-9]{1})$")
         .unwrap();
