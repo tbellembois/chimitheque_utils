@@ -8,6 +8,7 @@ pub enum CeNumberError {
     DigitGroupsCaptureError,
     CharTodigitConversionerror(char),
     NoCheckDigitFound,
+    CheckDigitDoesNotMatch,
 }
 
 impl Display for CeNumberError {
@@ -18,6 +19,7 @@ impl Display for CeNumberError {
                 write!(f, "can not convert {char} into digit")
             }
             CeNumberError::NoCheckDigitFound => write!(f, "no check digit found"),
+            CeNumberError::CheckDigitDoesNotMatch => write!(f, "check digit does not match"),
         }
     }
 }
@@ -26,7 +28,7 @@ impl std::error::Error for CeNumberError {}
 
 /// <https://en.wikipedia.org/wiki/European_Community_number>
 /// Check if a string is a valid European Community number.
-pub fn is_ce_number(number: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
+pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Build regex.
     let re = Regex::new(r"^(?P<group1>[0-9]{3})-(?P<group2>[0-9]{3})-(?P<checkdigit>[0-9]{1})$")
         .unwrap();
@@ -90,7 +92,11 @@ pub fn is_ce_number(number: &str) -> Result<bool, Box<dyn std::error::Error + Se
             }
         };
 
-        Ok(digit.eq(&modulo))
+        if !digit.eq(&modulo) {
+            Err(Box::new(CeNumberError::CheckDigitDoesNotMatch))
+        } else {
+            Ok(())
+        }
     } else {
         Err(Box::new(CeNumberError::NoCheckDigitFound))
     }
@@ -128,8 +134,8 @@ mod tests {
         }
 
         // Check digit test.
-        assert!(!is_ce_number("214-480-7").unwrap());
-        assert!(!is_ce_number("200-419-1").unwrap());
+        assert!(is_ce_number("214-480-7").is_err());
+        assert!(is_ce_number("200-419-1").is_err());
     }
 
     #[test]
@@ -295,7 +301,7 @@ mod tests {
 
         for ce_number in ce_numbers {
             info!("processing {ce_number}");
-            assert!(is_ce_number(ce_number).unwrap());
+            assert!(is_ce_number(ce_number).is_ok());
         }
     }
 }
