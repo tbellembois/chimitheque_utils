@@ -55,7 +55,7 @@ pub fn build_casbin_matchers() {
     \
     ( (r.item == "bookmarks" || r.item == "download" || r.item == "validate") && (p.item == "products" || p.item =="all") ) || \
     \
-    ( (r.item == "userinfo" || r.item == "ping") && (p.item == "products" || p.item =="all") ) || \
+    ( (r.item == "getconnecteduser") && (p.item == "products" || p.item =="all") ) || \
     \
     ( (r.item == "stocks" && r.action == "r") && (p.item == "storages" || p.item =="all") )"#;
     println!(
