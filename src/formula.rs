@@ -20,7 +20,9 @@ impl Display for SortEmpiricalFormulaError {
         match self {
             SortEmpiricalFormulaError::UnbalancedParenthesis => write!(f, "unbalanced parenthesis"),
             SortEmpiricalFormulaError::UnknowAtom(s) => write!(f, "unknown atom {s}"),
-            SortEmpiricalFormulaError::CanNotParseNumber(ref e) => e.fmt(f),
+            SortEmpiricalFormulaError::CanNotParseNumber(e) => {
+                write!(f, "can not parse number: {e}")
+            }
             SortEmpiricalFormulaError::NumberAfterUnknowAtom => {
                 write!(f, "found a number after no known atom")
             }
@@ -48,6 +50,14 @@ impl std::error::Error for SortEmpiricalFormulaError {}
 ///               ^ .      for each d>=1 multiply atom by 2; (Na c=6 Cl c=6 ; Ca=2 C=2) depth=0
 ///                 ^      forget any other char
 pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+    // A struct to store the atom count and parenthesis depth while parsing the formula.
+    #[derive(Debug)]
+    struct AtomBlock {
+        atom_name: String,
+        parenthesis_depth: isize, // use isize to avoid conversions.
+        count: usize,
+    }
+
     let periodic_table = HashMap::from([
         ("Ac", "actinium"),
         ("Ag", "silver"),
@@ -167,13 +177,6 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
     // Creating a vec from input for parsing.
     let formula_vec: Vec<char> = formula.chars().collect();
 
-    // A struct to store the atom count and parenthesis depth while parsing the formula.
-    #[derive(Debug)]
-    struct AtomBlock {
-        atom_name: String,
-        parenthesis_depth: isize, // use isize to avoid conversions.
-        count: usize,
-    }
     let mut atom_blocks: Vec<AtomBlock> = Vec::new();
 
     // Cursor index while parsing the formula.
@@ -244,7 +247,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
                 // Does the atom exists?
                 if periodic_table.contains_key(&search_atom.as_str()) {
                     atom_blocks.push(AtomBlock {
-                        atom_name: search_atom.to_string(),
+                        atom_name: search_atom.clone(),
                         parenthesis_depth,
                         count: 1,
                     });
@@ -272,7 +275,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
 
                 // One digit number.
                 if maybe_count_string.is_none() {
-                    maybe_count_string = Some(format!("{}", current_char));
+                    maybe_count_string = Some(format!("{current_char}"));
                 }
 
                 // We can unwrap safely.
@@ -282,17 +285,17 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
                 let count = match count_string.parse::<usize>() {
                     Ok(count) => Some(count),
                     Err(e) => {
-                        return Err(Box::new(SortEmpiricalFormulaError::CanNotParseNumber(e)))
+                        return Err(Box::new(SortEmpiricalFormulaError::CanNotParseNumber(e)));
                     }
                 };
                 debug!("count: {:?}", count);
 
                 // The count can be for an atom or a closing parenthesis.
                 match previous_char {
-                    Some(')') | Some(']') => {
+                    Some(')' | ']') => {
                         // The count if for a parenthesis block.
                         // For each atom_count with a parenthesis_depth > parenthesis_depth, multiplying the count.
-                        for atom in atom_blocks.iter_mut() {
+                        for atom in &mut atom_blocks {
                             debug!("atom: {:?}", atom);
 
                             if atom.parenthesis_depth > parenthesis_depth {
@@ -304,7 +307,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
                             }
                         }
                     }
-                    Some('a'..='a') | Some('A'..='Z') => {
+                    Some('a'..='a' | 'A'..='Z') => {
                         // The count is for the last atom of atom_blocks.
                         // Updating the entry.
                         let last_atom_count = match atom_blocks.last_mut() {
@@ -319,7 +322,6 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
 
                         last_atom_count.count = count.unwrap();
                     }
-                    None => (),
                     _ => (),
                 }
 
@@ -340,7 +342,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
     // Building a map from atom_count.
     let mut atom_count_map: HashMap<String, usize> = HashMap::new();
 
-    for atom_block in atom_blocks.iter() {
+    for atom_block in &atom_blocks {
         if atom_count_map.contains_key(&atom_block.atom_name) {
             match atom_count_map.get_mut(&atom_block.atom_name) {
                 Some(atom_count) => *atom_count += atom_block.count,
@@ -352,7 +354,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
                         ),
                     ));
                 }
-            };
+            }
         } else {
             atom_count_map.insert(atom_block.atom_name.clone(), atom_block.count);
         }
@@ -362,7 +364,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
 
     // Building empirical formula.
     // C, H and then in alphabetical order.
-    let mut final_formula: String = "".to_string();
+    let mut final_formula: String = String::new();
 
     if atom_count_map.contains_key("C") {
         if atom_count_map.get("C").unwrap() == &1 {
@@ -390,7 +392,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
         let (atom_name, atom_count) = atom_count_map.get_key_value(key).unwrap();
 
         if atom_count == &1 {
-            final_formula.push_str(atom_name.to_string().as_str());
+            final_formula.push_str(atom_name.clone().as_str());
         } else {
             final_formula.push_str(format!("{atom_name}{atom_count}").as_str());
         }

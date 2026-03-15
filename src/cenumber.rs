@@ -34,9 +34,8 @@ pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send
         .unwrap();
 
     // Capture groups and check number.
-    let captures = match re.captures(number) {
-        Some(captures) => captures,
-        None => return Err(Box::new(CeNumberError::DigitGroupsCaptureError)),
+    let Some(captures) = re.captures(number) else {
+        return Err(Box::new(CeNumberError::DigitGroupsCaptureError));
     };
 
     let group1 = &captures["group1"];
@@ -51,13 +50,10 @@ pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send
 
     // Processing group1.
     for digit_char in group1.chars() {
-        let digit = match digit_char.to_digit(10) {
-            Some(digit) => digit,
-            None => {
-                return Err(Box::new(CeNumberError::CharTodigitConversionerror(
-                    digit_char,
-                )))
-            }
+        let Some(digit) = digit_char.to_digit(10) else {
+            return Err(Box::new(CeNumberError::CharTodigitConversionerror(
+                digit_char,
+            )));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -65,13 +61,10 @@ pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send
 
     // Processing group2.
     for digit_char in group2.chars() {
-        let digit = match digit_char.to_digit(10) {
-            Some(digit) => digit,
-            None => {
-                return Err(Box::new(CeNumberError::CharTodigitConversionerror(
-                    digit_char,
-                )))
-            }
+        let Some(digit) = digit_char.to_digit(10) else {
+            return Err(Box::new(CeNumberError::CharTodigitConversionerror(
+                digit_char,
+            )));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -83,19 +76,16 @@ pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send
 
     // Processing checkdigit.
     if let Some(digit_char) = checkdigit_char.chars().next() {
-        let digit = match digit_char.to_digit(10) {
-            Some(digit) => digit,
-            None => {
-                return Err(Box::new(CeNumberError::CharTodigitConversionerror(
-                    digit_char,
-                )))
-            }
+        let Some(digit) = digit_char.to_digit(10) else {
+            return Err(Box::new(CeNumberError::CharTodigitConversionerror(
+                digit_char,
+            )));
         };
 
-        if !digit.eq(&modulo) {
-            Err(Box::new(CeNumberError::CheckDigitDoesNotMatch))
-        } else {
+        if digit.eq(&modulo) {
             Ok(())
+        } else {
+            Err(Box::new(CeNumberError::CheckDigitDoesNotMatch))
         }
     } else {
         Err(Box::new(CeNumberError::NoCheckDigitFound))

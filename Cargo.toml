@@ -1,7 +1,20 @@
 [package]
 name = "chimitheque_utils"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+authors = ["Thomas Bellembois <thomas.bellembois@proton.me>"]
+description = "Chemical utilities for Chimithèque"
+license = "GPL-3.0"
+repository = "https://github.com/tbellembois/chimitheque_utils"
+homepage = "https://github.com/tbellembois/chimitheque_utils"
+readme = "README.md"
+categories = ["database", "science"]
+keywords = ["chemistry", "biology", "database", "management"]
+rust-version = "1.94.0"
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,6 +23,3 @@ dyn-error = "0.2.2"
 env_logger = "0.10.0"
 log = "0.4.20"
 regex = "1.10.2"
-
-[profile.release]
-debug = true

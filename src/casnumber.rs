@@ -60,9 +60,8 @@ pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Sen
 
     // Processing group2.
     for digit_char in group2_reversed.chars() {
-        let digit = match digit_char.to_digit(10) {
-            Some(digit) => digit,
-            None => return Err(Box::new(CasNumberError::CharTodigitConversion(digit_char))),
+        let Some(digit) = digit_char.to_digit(10) else {
+            return Err(Box::new(CasNumberError::CharTodigitConversion(digit_char)));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -72,9 +71,8 @@ pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Sen
 
     // Processing group1.
     for digit_char in group1_reversed.chars() {
-        let digit = match digit_char.to_digit(10) {
-            Some(digit) => digit,
-            None => return Err(Box::new(CasNumberError::CharTodigitConversion(digit_char))),
+        let Some(digit) = digit_char.to_digit(10) else {
+            return Err(Box::new(CasNumberError::CharTodigitConversion(digit_char)));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -86,17 +84,16 @@ pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Sen
 
     // Processing checkdigit.
     if let Some(digit_char) = checkdigit_char.chars().next() {
-        let digit = match digit_char.to_digit(10) {
-            Some(digit) => digit,
-            None => return Err(Box::new(CasNumberError::CharTodigitConversion(digit_char))),
+        let Some(digit) = digit_char.to_digit(10) else {
+            return Err(Box::new(CasNumberError::CharTodigitConversion(digit_char)));
         };
 
         debug!("digit:{digit}");
 
-        if !digit.eq(&modulo) {
-            Err(Box::new(CasNumberError::CheckDigitDoesNotMatch))
-        } else {
+        if digit.eq(&modulo) {
             Ok(())
+        } else {
+            Err(Box::new(CasNumberError::CheckDigitDoesNotMatch))
         }
     } else {
         Err(Box::new(CasNumberError::NoCheckDigitFound))

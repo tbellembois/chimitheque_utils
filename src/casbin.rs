@@ -1,7 +1,7 @@
 // Make changes in casbin.xlsx too.
 pub fn build_casbin_matchers() {
     // Request person must match policy person.
-    let person_request_match = r#"(r.person_id == p.person_id)"#;
+    let person_request_match = "(r.person_id == p.person_id)";
     // Admin.
     let is_admin_match = r#"(p.perm == "all" && p.item == "all" && p.entity_id == "-1")"#;
     // The policy action match the request action

@@ -196,8 +196,7 @@ mod tests {
             info!("Testing valid CAS number: {}", cas_number);
             assert!(
                 is_cas_number(cas_number).is_ok(),
-                "{} failed validation",
-                cas_number
+                "{cas_number} failed validation",
             );
         }
     }
@@ -233,8 +232,7 @@ mod tests {
             let result = is_cas_number(cas_number);
             assert!(
                 matches!(result, Err(boxed) if boxed.downcast_ref::<CasNumberError>().map_or(false, |e| matches!(e, CasNumberError::DigitGroupsCapture))),
-                "{} should fail digit groups capture",
-                cas_number
+                "{cas_number} should fail digit groups capture",
             );
         }
     }
@@ -268,16 +266,14 @@ mod tests {
             // Verify the correct number passes
             assert!(
                 is_cas_number(correct).is_ok(),
-                "Correct CAS number {} should pass",
-                correct
+                "Correct CAS number {correct} should pass",
             );
 
             // Verify the incorrect number fails with CheckDigitDoesNotMatch error
             let result = is_cas_number(incorrect);
             assert!(
                 matches!(result, Err(boxed) if boxed.downcast_ref::<CasNumberError>().map_or(false, |e| matches!(e, CasNumberError::CheckDigitDoesNotMatch))),
-                "Incorrect CAS number {} should fail checksum",
-                incorrect
+                "Incorrect CAS number {incorrect} should fail checksum",
             );
         }
     }
@@ -312,8 +308,7 @@ mod tests {
             let result = is_cas_number(cas_number);
             assert!(
                 matches!(result, Err(boxed) if boxed.downcast_ref::<CasNumberError>().map_or(false, |e| matches!(e, CasNumberError::DigitGroupsCapture))),
-                "{} should fail char conversion",
-                cas_number
+                "{cas_number} should fail char conversion",
             );
         }
     }
@@ -349,8 +344,7 @@ mod tests {
             // All Unicode/non-standard character cases should fail with CharTodigitConversion
             assert!(
                 matches!(result, Err(boxed) if boxed.downcast_ref::<CasNumberError>().map_or(false, |e| matches!(e, CasNumberError::DigitGroupsCapture))),
-                "{} should fail char conversion for Unicode/special characters",
-                cas_number
+                "{cas_number} should fail char conversion for Unicode/special characters",
             );
         }
     }
@@ -385,8 +379,7 @@ mod tests {
             // Verify the CAS number is valid (it should pass)
             assert!(
                 is_cas_number(cas_number).is_ok(),
-                "CAS number {} should be valid",
-                cas_number
+                "CAS number {cas_number} should be valid"
             );
 
             // Manually calculate the checksum to verify it matches the expected value
@@ -412,8 +405,7 @@ mod tests {
         // Verify the check digit matches the expected value
         assert_eq!(
             expected_checkdigit, expected_checksum,
-            "Check digit for {} should match expected checksum {}",
-            cas_number, expected_checksum
+            "Check digit for {cas_number} should match expected checksum {expected_checksum}"
         );
 
         // Calculate the checksum using the same logic as the function
@@ -444,8 +436,7 @@ mod tests {
         // Verify the calculated checksum matches the expected value and the actual check digit
         assert_eq!(
             calculated_checksum, expected_checksum,
-            "Calculated checksum for {} should match expected checksum {}",
-            cas_number, expected_checksum
+            "Calculated checksum for {cas_number} should match expected checksum {expected_checksum}"
         );
 
         // If you have access to the actual check digit from the CAS number string
@@ -453,11 +444,10 @@ mod tests {
             let digit: u32 = digit_char.to_digit(10).unwrap();
             assert_eq!(
                 digit, expected_checksum,
-                "Check digit for {} should match expected checksum {}",
-                cas_number, expected_checksum
+                "Check digit for {cas_number} should match expected checksum {expected_checksum}"
             );
         } else {
-            panic!("No check digit found in CAS number: {}", cas_number);
+            panic!("No check digit found in CAS number: {cas_number}");
         }
     }
 
@@ -494,10 +484,8 @@ mod tests {
             let result = is_cas_number(cas_number);
             assert!(
                 result.is_err(),
-                "{}
-                Expected error but received: {:?}",
-                cas_number,
-                result
+                "{cas_number}
+                Expected error but received: {result:?}"
             );
         }
     }
