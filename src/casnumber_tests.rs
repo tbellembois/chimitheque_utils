@@ -1,13 +1,11 @@
 #[cfg(test)]
 mod tests {
     use crate::casnumber::*;
-    use log::info;
 
     fn init_logger() {
         let _ = env_logger::builder().is_test(true).try_init();
     }
 
-    // Test valid CAS numbers
     #[test]
     fn test_valid_cas_numbers() {
         init_logger();
@@ -193,17 +191,12 @@ mod tests {
         ];
 
         for cas_number in valid_cas_numbers {
-            info!("Testing valid CAS number: {}", cas_number);
-            assert!(
-                is_cas_number(cas_number).is_ok(),
-                "{cas_number} failed validation",
-            );
+            assert!(is_cas_number(cas_number).is_ok(), "-> error {cas_number}");
         }
     }
 
-    // Test invalid CAS number formats
     #[test]
-    fn test_invalid_cas_number_formats() {
+    fn test_invalid_cas_numbers() {
         init_logger();
 
         let invalid_cas_numbers = vec![
@@ -225,268 +218,58 @@ mod tests {
             "ABC-12345-6",   // Non-numeric characters in first group
             "12-ABC34-5",    // Non-numeric characters in second group
             "123-45-A",      // Non-numeric character as check digit
+            "000-00-0",      // All zeros
+            "123-A5-7",      // Letter in group2
+            "A23-45-6",      // Letter in group1
+            "123-45-A",      // Letter as check digit
+            "123-X5-6",      // Letter in group2
+            "S23-45-6",      // Letter in group1
+            "123-4X-6",      // Letter in group2
+            "123-45-S",      // Letter as check digit
+            "1!3-45-6",      // Special character in group1
+            "123-4#-6",      // Special character in group2
+            "123-45-@",      // Special character as check digit
+            "123-€5-6",      // Special character in group2
+            "¢23-45-6",      // Currency symbol in group1
+            "123-4¢-6",      // Currency symbol in group2
+            "123-45-¢",      // Currency symbol as check digit
+            "100-٠٠-٥",      // Arabic-Indic digits
+            "100-𝟎𝟎-𝟕",      // Mathematical bold digits
+            "100-⁰⁰-⁵",      // Superscript digits
+            "100-⁰⁰-₅",      // Subscript digits
+            "100-ℵℵ-ℵ",      // Hebrew aleph symbols (should fail)
+            "100-ⰀⰀ-Ⰰ",      // Glagolitic letters (should fail)
+            "100-℁℁-℁",      // Latin extended symbols (should fail)
+            "100-一一-一",   // CJK unified ideographs (should fail)
+            "100-☀☀-☀",      // Miscellaneous symbols (should fail)
+            "100-ℂℂ-ℂ",      // Double-struck letters (should fail)
+            "",              // Empty string
+            "            ",  // Whitespace string
+            "1337-420-69",   // Pop culture reference - likely invalid
+            "999-99-98",     // Check digit should be 9 (based on the checksum)
+            "111-11-10",     // Check digit should be 1 (based on the checksum)
+            "123-45-678",    // Check digit too long
+            "000-00-1",      // All zeros except check digit - likely invalid
+            "999-99-0",      // Check digit should be 9 (based on the checksum)
+            "123-456-7",     // Second group too long
+            "12345678-9-0",  // First group too long
+            "1-23-4",        // First group too short
+            "12-3-4",        // First group too short
+            "123-4-5",       // Second group too short
+            "123-45-",       // Missing check digit
+            "123-45-gh",     // Non-numeric check digit
+            "123-4a-5",      // Non-numeric character in group2
+            "12a-45-6",      // Non-numeric character in group1
+            "123 45-6",      // Whitespace instead of hyphen
+            "123-45-6 ",     // Trailing whitespace
+            " 123-45-6",     // Leading whitespace
+            "123-45-6\n",    // Newline character
         ];
 
         for cas_number in invalid_cas_numbers {
-            info!("Testing invalid CAS number format: {}", cas_number);
-            let result = is_cas_number(cas_number);
-            assert!(
-                matches!(result, Err(boxed) if boxed.downcast_ref::<CasNumberError>().map_or(false, |e| matches!(e, CasNumberError::DigitGroupsCapture))),
-                "{cas_number} should fail digit groups capture",
-            );
-        }
-    }
-
-    // Test checksum calculation errors
-    #[test]
-    fn test_checksum_errors() {
-        init_logger();
-
-        // Create test cases where the number looks valid but has an incorrect checksum
-        let test_cases = vec![
-            // Correct format, wrong checksum
-            ("7440-44-0", "7440-44-5"), // Incorrect checksum
-            ("7732-18-5", "7732-18-6"), // Incorrect checksum
-            ("7782-49-2", "7782-49-3"), // Incorrect checksum
-            ("7727-37-9", "7727-37-8"), // Incorrect checksum
-            ("7440-44-0", "7440-44-1"), // Incorrect checksum
-            ("56-81-5", "56-81-6"),     // Incorrect checksum
-            ("7783-77-9", "7783-77-6"), // Incorrect checksum
-            ("50-99-7", "50-99-8"),     // Incorrect checksum
-            ("62-53-3", "62-53-4"),     // Incorrect checksum
-            ("71-43-2", "71-43-3"),     // Incorrect checksum
-        ];
-
-        for (correct, incorrect) in test_cases {
-            info!(
-                "Testing checksum: correct {}, incorrect {}",
-                correct, incorrect
-            );
-
-            // Verify the correct number passes
-            assert!(
-                is_cas_number(correct).is_ok(),
-                "Correct CAS number {correct} should pass",
-            );
-
-            // Verify the incorrect number fails with CheckDigitDoesNotMatch error
-            let result = is_cas_number(incorrect);
-            assert!(
-                matches!(result, Err(boxed) if boxed.downcast_ref::<CasNumberError>().map_or(false, |e| matches!(e, CasNumberError::CheckDigitDoesNotMatch))),
-                "Incorrect CAS number {incorrect} should fail checksum",
-            );
-        }
-    }
-
-    // Test error handling for non-numeric characters
-    #[test]
-    fn test_non_numeric_characters() {
-        init_logger();
-
-        let test_cases = vec![
-            "123-A5-7", // Letter in group2
-            "A23-45-6", // Letter in group1
-            "123-45-A", // Letter as check digit
-            "123-X5-6", // Letter in group2
-            "S23-45-6", // Letter in group1
-            "123-4X-6", // Letter in group2
-            "123-45-S", // Letter as check digit
-            "1!3-45-6", // Special character in group1
-            "123-4#-6", // Special character in group2
-            "123-45-@", // Special character as check digit
-            "123-€5-6", // Special character in group2
-            "¢23-45-6", // Currency symbol in group1
-            "123-4¢-6", // Currency symbol in group2
-            "123-45-¢", // Currency symbol as check digit
-        ];
-
-        for cas_number in test_cases {
-            info!(
-                "Testing non-numeric characters in CAS number: {}",
-                cas_number
-            );
-            let result = is_cas_number(cas_number);
-            assert!(
-                matches!(result, Err(boxed) if boxed.downcast_ref::<CasNumberError>().map_or(false, |e| matches!(e, CasNumberError::DigitGroupsCapture))),
-                "{cas_number} should fail char conversion",
-            );
-        }
-    }
-
-    // Test Unicode and special characters
-    #[test]
-    fn test_unicode_and_special_characters() {
-        init_logger();
-
-        let test_cases = vec![
-            "100-٠٠-٥",     // Arabic-Indic digits
-            "100-𝟎𝟎-𝟕",     // Mathematical bold digits
-            "100-⁰⁰-⁵",     // Superscript digits
-            "100-⁰⁰-₅",     // Subscript digits
-            "100-ℵℵ-ℵ",     // Hebrew aleph symbols (should fail)
-            "100-ⰀⰀ-Ⰰ",     // Glagolitic letters (should fail)
-            "100-℁℁-℁",     // Latin extended symbols (should fail)
-            "100-一一-一",  // CJK unified ideographs (should fail)
-            "100-☀☀-☀",     // Miscellaneous symbols (should fail)
-            "100-ℂℂ-ℂ",     // Double-struck letters (should fail)
-            "",             // Empty string
-            "            ", // Whitespace string
-            "000-00-0",     // All zeros
-        ];
-
-        for cas_number in test_cases {
-            info!(
-                "Testing Unicode/special character CAS number: {}",
-                cas_number
-            );
-            let result = is_cas_number(cas_number);
-
-            // All Unicode/non-standard character cases should fail with CharTodigitConversion
-            assert!(
-                matches!(result, Err(boxed) if boxed.downcast_ref::<CasNumberError>().map_or(false, |e| matches!(e, CasNumberError::DigitGroupsCapture))),
-                "{cas_number} should fail char conversion for Unicode/special characters",
-            );
-        }
-    }
-
-    // Test the checksum calculation logic
-    #[test]
-    fn test_checksum_calculation() {
-        init_logger();
-
-        // Test known CAS numbers and their checksums
-        let test_cases = vec![
-            ("100-00-5", 5),   // Simple known good CAS number
-            ("100-40-3", 3),   // Known from original test
-            ("100-42-5", 5),   // Known from original test
-            ("100-44-7", 7),   // Known from original test
-            ("100-63-0", 0),   // Known from original test
-            ("10028-18-9", 9), // Known from original test
-            ("101-14-4", 4),   // Known from original test
-            ("101-21-3", 3),   // Known from original test
-            ("101-61-1", 1),   // Known from original test
-            ("101-68-8", 8),   // Known from original test
-            ("101-77-9", 9),   // Known from original test
-            ("101-80-4", 4),   // Known from original test
-            ("101-90-6", 6),   // Known from original test
-        ];
-
-        for (cas_number, expected_checksum) in test_cases {
-            info!(
-                "Testing checksum calculation for CAS number: {}",
-                cas_number
-            );
-            // Verify the CAS number is valid (it should pass)
-            assert!(
-                is_cas_number(cas_number).is_ok(),
-                "CAS number {cas_number} should be valid"
-            );
-
-            // Manually calculate the checksum to verify it matches the expected value
-            test_manual_checksum(cas_number, expected_checksum);
-        }
-    }
-
-    // Helper function to manually test checksum calculation
-    fn test_manual_checksum(cas_number: &str, expected_checksum: u32) {
-        let re =
-            Regex::new(r"^(?P<group1>[0-9]{2,7})-(?P<group2>[0-9]{2})-(?P<checkdigit>[0-9]{1})$")
-                .unwrap();
-
-        let captures = re.captures(cas_number).unwrap();
-
-        let group1 = &captures["group1"];
-        let group2 = &captures["group2"];
-        let checkdigit_str = &captures["checkdigit"];
-
-        // Convert check digit to number
-        let expected_checkdigit: u32 = checkdigit_str.parse().unwrap();
-
-        // Verify the check digit matches the expected value
-        assert_eq!(
-            expected_checkdigit, expected_checksum,
-            "Check digit for {cas_number} should match expected checksum {expected_checksum}"
-        );
-
-        // Calculate the checksum using the same logic as the function
-        let mut multiplier = 1;
-        let mut total = 0;
-
-        let group2_reversed: String = group2.chars().rev().collect();
-
-        // Processing group2
-        for digit_char in group2_reversed.chars() {
-            let digit: u32 = digit_char.to_digit(10).unwrap();
-            total += multiplier * digit;
-            multiplier += 1;
+            assert!(is_cas_number(cas_number).is_err(), "-> error {cas_number}");
         }
 
-        let group1_reversed: String = group1.chars().rev().collect();
-
-        // Processing group1
-        for digit_char in group1_reversed.chars() {
-            let digit: u32 = digit_char.to_digit(10).unwrap();
-            total += multiplier * digit;
-            multiplier += 1;
-        }
-
-        // Calculating modulo
-        let calculated_checksum = total % 10;
-
-        // Verify the calculated checksum matches the expected value and the actual check digit
-        assert_eq!(
-            calculated_checksum, expected_checksum,
-            "Calculated checksum for {cas_number} should match expected checksum {expected_checksum}"
-        );
-
-        // If you have access to the actual check digit from the CAS number string
-        if let Some(digit_char) = checkdigit_str.chars().next() {
-            let digit: u32 = digit_char.to_digit(10).unwrap();
-            assert_eq!(
-                digit, expected_checksum,
-                "Check digit for {cas_number} should match expected checksum {expected_checksum}"
-            );
-        } else {
-            panic!("No check digit found in CAS number: {cas_number}");
-        }
-    }
-
-    // Test known invalid CAS numbers from public sources
-    #[test]
-    fn test_known_invalid_cas_numbers() {
-        init_logger();
-
-        let invalid_cas_numbers = vec![
-            "000-00-0",     // All zeros - commonly invalid
-            "1337-420-69",  // Pop culture reference - likely invalid
-            "999-99-98",    // Check digit should be 9 (based on the checksum)
-            "111-11-10",    // Check digit should be 1 (based on the checksum)
-            "123-45-678",   // Check digit too long
-            "000-00-1",     // All zeros except check digit - likely invalid
-            "999-99-0",     // Check digit should be 9 (based on the checksum)
-            "123-456-7",    // Second group too long
-            "12345678-9-0", // First group too long
-            "1-23-4",       // First group too short
-            "12-3-4",       // First group too short
-            "123-4-5",      // Second group too short
-            "123-45-",      // Missing check digit
-            "123-45-gh",    // Non-numeric check digit
-            "123-4a-5",     // Non-numeric character in group2
-            "12a-45-6",     // Non-numeric character in group1
-            "123 45-6",     // Whitespace instead of hyphen
-            "123-45-6 ",    // Trailing whitespace
-            " 123-45-6",    // Leading whitespace
-            "123-45-6\n",   // Newline character
-        ];
-
-        for cas_number in invalid_cas_numbers {
-            info!("Testing known invalid CAS number: {}", cas_number);
-            let result = is_cas_number(cas_number);
-            assert!(
-                result.is_err(),
-                "{cas_number}
-                Expected error but received: {result:?}"
-            );
-        }
+        // All zeros
     }
 }

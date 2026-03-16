@@ -26,17 +26,5 @@ pub fn clean(s: &str, transform: Transform) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use crate::string::{clean, Transform};
-
-    #[test]
-    fn test_clean() {
-        assert_eq!("abc", clean(" abc", Transform::None));
-        assert_eq!("abc", clean("abc ", Transform::None));
-        assert_eq!("abc", clean(" abc ", Transform::None));
-        assert_eq!("a bc", clean("a  bc", Transform::None));
-        assert_eq!("a b c", clean("a  b    c", Transform::None));
-        assert_eq!("ABC", clean(" abc ", Transform::Uppercase));
-        assert_eq!("abc", clean(" ABC ", Transform::Lowercase));
-    }
-}
+#[path = "string_tests.rs"]
+mod string_tests;

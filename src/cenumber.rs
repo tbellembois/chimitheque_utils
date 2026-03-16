@@ -9,6 +9,7 @@ pub enum CeNumberError {
     CharTodigitConversionerror(char),
     NoCheckDigitFound,
     CheckDigitDoesNotMatch,
+    AllZeros,
 }
 
 impl Display for CeNumberError {
@@ -20,6 +21,7 @@ impl Display for CeNumberError {
             }
             CeNumberError::NoCheckDigitFound => write!(f, "no check digit found"),
             CeNumberError::CheckDigitDoesNotMatch => write!(f, "check digit does not match"),
+            CeNumberError::AllZeros => write!(f, "all zeros"),
         }
     }
 }
@@ -30,11 +32,13 @@ impl std::error::Error for CeNumberError {}
 /// Check if a string is a valid European Community number.
 pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Build regex.
-    let re = Regex::new(r"^(?P<group1>[0-9]{3})-(?P<group2>[0-9]{3})-(?P<checkdigit>[0-9]{1})$")
-        .unwrap();
+    let ce_number_re =
+        Regex::new(r"^(?P<group1>[0-9]{3})-(?P<group2>[0-9]{3})-(?P<checkdigit>[0-9]{1})$")
+            .unwrap();
+    let all_zeros_re = Regex::new(r"^0+$").unwrap();
 
     // Capture groups and check number.
-    let Some(captures) = re.captures(number) else {
+    let Some(captures) = ce_number_re.captures(number) else {
         return Err(Box::new(CeNumberError::DigitGroupsCaptureError));
     };
 
@@ -42,6 +46,10 @@ pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send
     let group2 = &captures["group2"];
     let checkdigit_char = &captures["checkdigit"];
     debug!("group1:{group1} - group2:{group2} - checkdigit_char:{checkdigit_char}");
+
+    if all_zeros_re.is_match(group1) && all_zeros_re.is_match(group2) {
+        return Err(Box::new(CeNumberError::AllZeros));
+    }
 
     // Multiplier that will increase at each operation.
     let mut multiplier = 1;
@@ -91,3 +99,7 @@ pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send
         Err(Box::new(CeNumberError::NoCheckDigitFound))
     }
 }
+
+#[cfg(test)]
+#[path = "cenumber_tests.rs"]
+mod cenumber_tests;
