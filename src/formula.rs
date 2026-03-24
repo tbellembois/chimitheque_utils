@@ -13,6 +13,7 @@ pub enum SortEmpiricalFormulaError {
     CanNotParseNumber(ParseIntError),
     NumberAfterUnknowAtom,
     UnexpectedNoneAtomCount(String),
+    EmptyFormula,
 }
 
 impl Display for SortEmpiricalFormulaError {
@@ -29,6 +30,7 @@ impl Display for SortEmpiricalFormulaError {
             SortEmpiricalFormulaError::UnexpectedNoneAtomCount(s) => {
                 write!(f, "unexpected empty atom_count_map value for key {s}")
             }
+            SortEmpiricalFormulaError::EmptyFormula => write!(f, "empty formula"),
         }
     }
 }
@@ -173,6 +175,11 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
         ("Zn", "zinc"),
         ("Zr", "zirconium"),
     ]);
+
+    // Rejecting empty formulas.
+    if formula.is_empty() {
+        return Err(Box::new(SortEmpiricalFormulaError::EmptyFormula));
+    }
 
     // Creating a vec from input for parsing.
     let formula_vec: Vec<char> = formula.chars().collect();
