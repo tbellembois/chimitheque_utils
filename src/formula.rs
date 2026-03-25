@@ -7,7 +7,7 @@ use std::{
 };
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum SortEmpiricalFormulaError {
+pub enum ToEmpiricalFormulaError {
     UnbalancedParenthesis,
     UnknowAtom(String),
     CanNotParseNumber(ParseIntError),
@@ -16,26 +16,26 @@ pub enum SortEmpiricalFormulaError {
     EmptyFormula,
 }
 
-impl Display for SortEmpiricalFormulaError {
+impl Display for ToEmpiricalFormulaError {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match self {
-            SortEmpiricalFormulaError::UnbalancedParenthesis => write!(f, "unbalanced parenthesis"),
-            SortEmpiricalFormulaError::UnknowAtom(s) => write!(f, "unknown atom {s}"),
-            SortEmpiricalFormulaError::CanNotParseNumber(e) => {
+            ToEmpiricalFormulaError::UnbalancedParenthesis => write!(f, "unbalanced parenthesis"),
+            ToEmpiricalFormulaError::UnknowAtom(s) => write!(f, "unknown atom {s}"),
+            ToEmpiricalFormulaError::CanNotParseNumber(e) => {
                 write!(f, "can not parse number: {e}")
             }
-            SortEmpiricalFormulaError::NumberAfterUnknowAtom => {
+            ToEmpiricalFormulaError::NumberAfterUnknowAtom => {
                 write!(f, "found a number after no known atom")
             }
-            SortEmpiricalFormulaError::UnexpectedNoneAtomCount(s) => {
+            ToEmpiricalFormulaError::UnexpectedNoneAtomCount(s) => {
                 write!(f, "unexpected empty atom_count_map value for key {s}")
             }
-            SortEmpiricalFormulaError::EmptyFormula => write!(f, "empty formula"),
+            ToEmpiricalFormulaError::EmptyFormula => write!(f, "empty formula"),
         }
     }
 }
 
-impl std::error::Error for SortEmpiricalFormulaError {}
+impl std::error::Error for ToEmpiricalFormulaError {}
 
 /// Sorts the empirical formula from a string.
 /// Sort order: C and H atoms then the others in alphabetical order.
@@ -51,7 +51,7 @@ impl std::error::Error for SortEmpiricalFormulaError {}
 ///             ^ . .      for each d>=2 multiply atom by 3; (Na c=3 Cl c=3) depth=1
 ///               ^ .      for each d>=1 multiply atom by 2; (Na c=6 Cl c=6 ; Ca=2 C=2) depth=0
 ///                 ^      forget any other char
-pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
     // A struct to store the atom count and parenthesis depth while parsing the formula.
     #[derive(Debug)]
     struct AtomBlock {
@@ -178,7 +178,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
 
     // Rejecting empty formulas.
     if formula.is_empty() {
-        return Err(Box::new(SortEmpiricalFormulaError::EmptyFormula));
+        return Err(Box::new(ToEmpiricalFormulaError::EmptyFormula));
     }
 
     // Creating a vec from input for parsing.
@@ -226,7 +226,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
                 parenthesis_depth -= 1;
                 // Check wrong parenthesis number.
                 if parenthesis_depth < 0 {
-                    return Err(Box::new(SortEmpiricalFormulaError::UnbalancedParenthesis));
+                    return Err(Box::new(ToEmpiricalFormulaError::UnbalancedParenthesis));
                 }
 
                 cursor_index += 1;
@@ -260,7 +260,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
                     });
                     debug!("found atom: {search_atom}");
                 } else {
-                    return Err(Box::new(SortEmpiricalFormulaError::UnknowAtom(search_atom)));
+                    return Err(Box::new(ToEmpiricalFormulaError::UnknowAtom(search_atom)));
                 }
 
                 // Updating the cursor.
@@ -292,7 +292,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
                 let count = match count_string.parse::<usize>() {
                     Ok(count) => Some(count),
                     Err(e) => {
-                        return Err(Box::new(SortEmpiricalFormulaError::CanNotParseNumber(e)));
+                        return Err(Box::new(ToEmpiricalFormulaError::CanNotParseNumber(e)));
                     }
                 };
                 debug!("count: {:?}", count);
@@ -321,7 +321,7 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
                             last_atom_count.count = count.unwrap();
                         } else {
                             // We have a number after no known atom, this is an error.
-                            return Err(Box::new(SortEmpiricalFormulaError::NumberAfterUnknowAtom));
+                            return Err(Box::new(ToEmpiricalFormulaError::NumberAfterUnknowAtom));
                         }
                     }
                     _ => (),
@@ -350,11 +350,9 @@ pub fn sort_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + S
                 Some(atom_count) => *atom_count += atom_block.count,
                 None => {
                     // Should never happen.
-                    return Err(Box::new(
-                        SortEmpiricalFormulaError::UnexpectedNoneAtomCount(
-                            atom_block.atom_name.clone(),
-                        ),
-                    ));
+                    return Err(Box::new(ToEmpiricalFormulaError::UnexpectedNoneAtomCount(
+                        atom_block.atom_name.clone(),
+                    )));
                 }
             }
         } else {

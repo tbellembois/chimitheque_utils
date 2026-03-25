@@ -5,6 +5,7 @@ use regex::Regex;
 
 #[derive(Debug, PartialEq)]
 pub enum CasNumberError {
+    EmptyCasNumber,
     DigitGroupsCapture,
     CharTodigitConversion(char),
     NoCheckDigitFound,
@@ -22,6 +23,7 @@ impl Display for CasNumberError {
             CasNumberError::NoCheckDigitFound => write!(f, "no check digit found"),
             CasNumberError::CheckDigitDoesNotMatch => write!(f, "check digit does not match"),
             CasNumberError::AllZeros => write!(f, "all zeros"),
+            CasNumberError::EmptyCasNumber => write!(f, "empty CAS number"),
         }
     }
 }
@@ -31,6 +33,11 @@ impl std::error::Error for CasNumberError {}
 /// <https://en.wikipedia.org/wiki/CAS_Registry_Number>
 /// Check if a string is a valid CAS number.
 pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // Rejecting empty numbers.
+    if number.is_empty() {
+        return Err(Box::new(CasNumberError::EmptyCasNumber));
+    }
+
     // Build regex.
     let cas_number_re =
         Regex::new(r"^(?P<group1>[0-9]{2,7})-(?P<group2>[0-9]{2})-(?P<checkdigit>[0-9]{1})$")

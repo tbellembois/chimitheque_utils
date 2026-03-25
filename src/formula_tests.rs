@@ -191,10 +191,7 @@ mod tests {
         ];
 
         for formula in empirical_formulas {
-            assert_eq!(
-                sort_empirical_formula(formula).unwrap(),
-                formula.to_string()
-            );
+            assert_eq!(to_empirical_formula(formula).unwrap(), formula.to_string());
         }
 
         let linear_formulas = vec![
@@ -425,7 +422,7 @@ mod tests {
         ];
 
         for formula in linear_formulas {
-            let maybe_empirical_formula = sort_empirical_formula(formula);
+            let maybe_empirical_formula = to_empirical_formula(formula);
             assert!(maybe_empirical_formula.is_ok(), "-> error {formula}");
         }
     }

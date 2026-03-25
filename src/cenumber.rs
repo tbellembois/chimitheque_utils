@@ -5,6 +5,7 @@ use regex::Regex;
 
 #[derive(Debug, PartialEq)]
 pub enum CeNumberError {
+    EmptyCeNumber,
     DigitGroupsCaptureError,
     CharTodigitConversionerror(char),
     NoCheckDigitFound,
@@ -22,6 +23,7 @@ impl Display for CeNumberError {
             CeNumberError::NoCheckDigitFound => write!(f, "no check digit found"),
             CeNumberError::CheckDigitDoesNotMatch => write!(f, "check digit does not match"),
             CeNumberError::AllZeros => write!(f, "all zeros"),
+            CeNumberError::EmptyCeNumber => write!(f, "empty CE number"),
         }
     }
 }
@@ -31,6 +33,11 @@ impl std::error::Error for CeNumberError {}
 /// <https://en.wikipedia.org/wiki/European_Community_number>
 /// Check if a string is a valid European Community number.
 pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // Rejecting empty numbers.
+    if number.is_empty() {
+        return Err(Box::new(CeNumberError::EmptyCeNumber));
+    }
+
     // Build regex.
     let ce_number_re =
         Regex::new(r"^(?P<group1>[0-9]{3})-(?P<group2>[0-9]{3})-(?P<checkdigit>[0-9]{1})$")
