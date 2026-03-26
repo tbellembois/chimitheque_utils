@@ -206,4 +206,40 @@ mod tests {
             assert!(is_ce_number(ce_number).is_err(), "-> error {ce_number}");
         }
     }
+
+    #[test]
+    fn test_format_empty_ce_number_error() {
+        let error = CeNumberError::EmptyCeNumber;
+        assert_eq!(error.to_string(), "empty CE number");
+    }
+
+    #[test]
+    fn test_format_digit_groups_capture_error() {
+        let error = CeNumberError::DigitGroupsCaptureError;
+        assert_eq!(error.to_string(), "can not capture digit groups");
+    }
+
+    #[test]
+    fn test_format_char_to_digit_conversion_error() {
+        let error = CeNumberError::CharTodigitConversionerror('a');
+        assert_eq!(error.to_string(), "can not convert a into digit");
+    }
+
+    #[test]
+    fn test_format_no_check_digit_found_error() {
+        let error = CeNumberError::NoCheckDigitFound;
+        assert_eq!(error.to_string(), "no check digit found");
+    }
+
+    #[test]
+    fn test_format_check_digit_does_not_match_error() {
+        let error = CeNumberError::CheckDigitDoesNotMatch;
+        assert_eq!(error.to_string(), "check digit does not match");
+    }
+
+    #[test]
+    fn test_format_all_zeros_error() {
+        let error = CeNumberError::AllZeros;
+        assert_eq!(error.to_string(), "all zeros");
+    }
 }

@@ -426,4 +426,46 @@ mod tests {
             assert!(maybe_empirical_formula.is_ok(), "-> error {formula}");
         }
     }
+
+    #[test]
+    fn test_format_unbalanced_parenthesis_error() {
+        let error = ToEmpiricalFormulaError::UnbalancedParenthesis;
+        assert_eq!(error.to_string(), "unbalanced parenthesis");
+    }
+
+    #[test]
+    fn test_format_unknow_atom_error() {
+        let error = ToEmpiricalFormulaError::UnknowAtom("Xy".to_string());
+        assert_eq!(error.to_string(), "unknown atom Xy");
+    }
+
+    #[test]
+    fn test_format_cannot_parse_number_error() {
+        let error = ToEmpiricalFormulaError::CanNotParseNumber("abc".parse::<u32>().unwrap_err());
+        assert_eq!(
+            error.to_string(),
+            "can not parse number: invalid digit found in string"
+        );
+    }
+
+    #[test]
+    fn test_format_number_after_unknow_atom_error() {
+        let error = ToEmpiricalFormulaError::NumberAfterUnknowAtom;
+        assert_eq!(error.to_string(), "found a number after no known atom");
+    }
+
+    #[test]
+    fn test_format_unexpected_none_atom_count_error() {
+        let error = ToEmpiricalFormulaError::UnexpectedNoneAtomCount("Xy".to_string());
+        assert_eq!(
+            error.to_string(),
+            "unexpected empty atom_count_map value for key Xy"
+        );
+    }
+
+    #[test]
+    fn test_format_empty_formula_error() {
+        let error = ToEmpiricalFormulaError::EmptyFormula;
+        assert_eq!(error.to_string(), "empty formula");
+    }
 }

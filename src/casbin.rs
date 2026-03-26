@@ -1,4 +1,5 @@
 // Make changes in casbin.xlsx too.
+#[cfg(not(tarpaulin_include))]
 pub fn build_casbin_matchers() {
     // Request person must match policy person.
     let person_request_match = "(r.person_id == p.person_id)";
