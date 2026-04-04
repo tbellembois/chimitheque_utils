@@ -210,8 +210,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
         }
 
         debug!(
-            "current_char: {current_char} maybe_next_char: {:?}",
-            maybe_next_char
+            "current_char: {current_char} maybe_next_char: {maybe_next_char:?}"
         );
 
         match current_char {
@@ -295,7 +294,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
                         return Err(Box::new(ToEmpiricalFormulaError::CanNotParseNumber(e)));
                     }
                 };
-                debug!("count: {:?}", count);
+                debug!("count: {count:?}");
 
                 // The count can be for an atom or a closing parenthesis.
                 match previous_char {
@@ -303,7 +302,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
                         // The count if for a parenthesis block.
                         // For each atom_count with a parenthesis_depth > parenthesis_depth, multiplying the count.
                         for atom in &mut atom_blocks {
-                            debug!("atom: {:?}", atom);
+                            debug!("atom: {atom:?}");
 
                             if atom.parenthesis_depth > parenthesis_depth {
                                 atom.count *= count.unwrap();
@@ -339,7 +338,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
         previous_char = Some(current_char);
     }
 
-    debug!("{:#?}", atom_blocks);
+    debug!("{atom_blocks:#?}");
 
     // Building a map from atom_count.
     let mut atom_count_map: HashMap<String, usize> = HashMap::new();
@@ -360,7 +359,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
         }
     }
 
-    debug!("{:#?}", atom_count_map);
+    debug!("{atom_count_map:#?}");
 
     // Building empirical formula.
     // C, H and then in alphabetical order.
