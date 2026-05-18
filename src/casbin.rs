@@ -56,9 +56,9 @@ pub fn build_casbin_matchers() {
     \
     ( (r.item == "bookmarks" || r.item == "download" || r.item == "validate") && (p.item == "products" || p.item =="all") ) || \
     \
-    ( (r.item == "getconnecteduser") && (p.item == "products" || p.item =="all") ) || \
+    ( (r.item == "connecteduser" || r.item == "exportproducts") && (p.item == "products" || p.item =="all") ) || \
     \
-    ( (r.item == "stocks" && r.action == "r") && (p.item == "storages" || p.item =="all") )"#;
+    ( (r.item == "stocks" || r.item == "exportstorages") && (p.item == "storages" || p.item =="all") )"#;
     println!(
         "m = ( {person_request_match} && ( {is_admin_match} || {permission_equivalence_match} ) && ( {rules_match} ) )"
     );
