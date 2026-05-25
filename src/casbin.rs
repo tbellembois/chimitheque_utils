@@ -4,7 +4,7 @@ pub fn build_casbin_matchers() {
     // Request person must match policy person.
     let person_request_match = "(r.person_id == p.person_id)";
     // Admin.
-    let is_admin_match = r#"(p.perm == "all" && p.item == "all" && p.entity_id == "-1")"#;
+    let is_admin_match = r#"(p.perm == "all" && p.item == "all" && p.entity_id == "")"#;
     // The policy action match the request action
     // or if the action is read the policy can be r or w or all
     // or if the action is write or delete the policy can be w or all
@@ -32,25 +32,25 @@ pub fn build_casbin_matchers() {
     \
     ( (r.item == "storages" && r.action == "c")                    && (p.item == "storages" || p.item =="all") ) || \
     ( (r.item == "storages" && r.action == "r" && r.item_id == "") && (p.item == "storages" || p.item =="all") ) || \
-    ( ((r.item == "storages" || r.item == "borrows") && r.action == "r" && r.item_id != "") && (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" || matchStorageIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
-    ( (r.item == "storages" && r.action == "u")                    && (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" || matchStorageIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
-    ( (r.item == "storages" && r.action == "d")                    && (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" ||matchStorageIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
+    ( ((r.item == "storages" || r.item == "borrows") && r.action == "r" && r.item_id != "") && (p.item == "storages" || p.item =="all") && (p.entity_id == "" || matchStorageIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
+    ( (r.item == "storages" && r.action == "u")                    && (p.item == "storages" || p.item =="all") && (p.entity_id == "" || matchStorageIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
+    ( (r.item == "storages" && r.action == "d")                    && (p.item == "storages" || p.item =="all") && (p.entity_id == "" ||matchStorageIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
     \
     ( (r.item == "store_locations" && r.action == "c")                    && (p.item == "entities" || p.item =="all") ) || \
     ( (r.item == "store_locations" && r.action == "r" && r.item_id == "") && (p.item == "storages" || p.item =="all") ) || \
-    ( (r.item == "store_locations" && r.action == "r" && r.item_id != "") && (p.item == "storages" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
-    ( (r.item == "store_locations" && r.action == "u")                    && (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
-    ( (r.item == "store_locations" && r.action == "d")                    && (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchStoreLocationIsInEntity(r.item_id,p.entity_id,r.person_id)) && !matchStoreLocationHasChildren(r.item_id,r.person_id) && !matchStoreLocationHasStorages(r.item_id,r.person_id) ) || \
+    ( (r.item == "store_locations" && r.action == "r" && r.item_id != "") && (p.item == "storages" || p.item =="all") && (p.entity_id == "" || matchStoreLocationIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
+    ( (r.item == "store_locations" && r.action == "u")                    && (p.item == "entities" || p.item =="all") && (p.entity_id == "" || matchStoreLocationIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
+    ( (r.item == "store_locations" && r.action == "d")                    && (p.item == "entities" || p.item =="all") && (p.entity_id == "" || matchStoreLocationIsInEntity(r.item_id,p.entity_id,r.person_id)) && !matchStoreLocationHasChildren(r.item_id,r.person_id) && !matchStoreLocationHasStorages(r.item_id,r.person_id) ) || \
     \
     ( (r.item == "people" && r.action == "c")                    && (p.item == "entities" || p.item =="all") ) || \
     ( (r.item == "people" && r.action == "r" && r.item_id == "") && (p.item == "entities" || p.item =="all") ) || \
-    ( (r.item == "people" && r.action == "r" && r.item_id != "") && (p.item == "entities" || p.item =="all") && (p.entity_id == "-1" || matchPersonIsInEntity(r.item_id,p.entity_id)) ) || \
-    ( (r.item == "people" && r.action == "u")                    && (r.person_id != r.item_id) && (p.item == "entities" || p.item == "all") && (p.entity_id == "-1" || matchPersonIsInEntity(r.item_id,p.entity_id)) && !matchPersonIsAdmin(r.item_id) ) || \
+    ( (r.item == "people" && r.action == "r" && r.item_id != "") && (p.item == "entities" || p.item =="all") && (p.entity_id == "" || matchPersonIsInEntity(r.item_id,p.entity_id,r.person_id)) ) || \
+    ( (r.item == "people" && r.action == "u")                    && (r.person_id != r.item_id) && (p.item == "entities" || p.item == "all") && (p.entity_id == "" || matchPersonIsInEntity(r.item_id,p.entity_id,r.person_id)) && !matchPersonIsAdmin(r.item_id) ) || \
     ( (r.item == "people" && r.action == "d")                    && (r.person_id != r.item_id) && (matchPersonIsAdmin(p.person_id)) && !matchPersonIsManager(r.item_id) && !matchPersonIsAdmin(r.item_id) ) || \
     \
     ( (r.item == "entities" && r.action == "c")                    && (matchPersonIsAdmin(p.person_id)) ) || \
     ( (r.item == "entities" && r.action == "r" && r.item_id == "") && (p.item == "entities" || p.item =="all") ) || \
-    ( (r.item == "entities" && r.action == "r" && r.item_id != "") && (r.item_id == p.entity_id || p.entity_id == "-1") && (p.item == "entities" || p.item =="all") ) || \
+    ( (r.item == "entities" && r.action == "r" && r.item_id != "") && (r.item_id == p.entity_id || p.entity_id == "") && (p.item == "entities" || p.item =="all") ) || \
     ( (r.item == "entities" && r.action == "u")                    && (matchPersonIsAdmin(p.person_id)) ) || \
     ( (r.item == "entities" && r.action == "d")                    && (matchPersonIsAdmin(p.person_id)) && !matchEntityHasMembers(r.item_id,r.person_id) && !matchEntityHasStoreLocations(r.item_id,r.person_id) ) || \
     \
