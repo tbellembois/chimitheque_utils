@@ -1,7 +1,7 @@
+use log::debug;
 use std::fmt::{Display, Formatter};
 
-use log::debug;
-use regex::Regex;
+use crate::define::{ALL_ZERO_RE, CAS_NUMBER_RE};
 
 #[derive(Debug, PartialEq)]
 pub enum CasNumberError {
@@ -38,14 +38,8 @@ pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Sen
         return Err(Box::new(CasNumberError::EmptyCasNumber));
     }
 
-    // Build regex.
-    let cas_number_re =
-        Regex::new(r"^(?P<group1>[0-9]{2,7})-(?P<group2>[0-9]{2})-(?P<checkdigit>[0-9]{1})$")
-            .unwrap();
-    let all_zeros_re = Regex::new(r"^0+$").unwrap();
-
     // Capture groups and check number.
-    let Some(captures) = cas_number_re.captures(number) else {
+    let Some(captures) = CAS_NUMBER_RE.captures(number) else {
         return Err(Box::new(CasNumberError::DigitGroupsCapture));
     };
 
@@ -54,7 +48,7 @@ pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Sen
     let checkdigit_char = &captures["checkdigit"];
     debug!("group1:{group1} - group2:{group2} - checkdigit_char:{checkdigit_char}");
 
-    if all_zeros_re.is_match(group1) && all_zeros_re.is_match(group2) {
+    if ALL_ZERO_RE.is_match(group1) && ALL_ZERO_RE.is_match(group2) {
         return Err(Box::new(CasNumberError::AllZeros));
     }
 
