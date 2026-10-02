@@ -1,3 +1,4 @@
+use chimitheque_defines::PERIODIC_TABLE;
 use log::debug;
 use std::{
     collections::HashMap,
@@ -60,122 +61,6 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
         count: usize,
     }
 
-    let periodic_table = HashMap::from([
-        ("Ac", "actinium"),
-        ("Ag", "silver"),
-        ("Al", "aluminium"),
-        ("Am", "americium"),
-        ("Ar", "argon"),
-        ("As", "arsenic"),
-        ("At", "astatine"),
-        ("Au", "gold"),
-        ("B", "boron"),
-        ("Ba", "barium"),
-        ("Be", "berylium"),
-        ("Bh", "bohrium"),
-        ("Bi", "bismuth"),
-        ("Bk", "berkelium"),
-        ("Br", "bromine"),
-        ("C", "carbon"),
-        ("Ca", "calcium"),
-        ("Cd", "cadmium"),
-        ("Ce", "cerium"),
-        ("Cf", "californium"),
-        ("Cl", "chlorine"),
-        ("Cm", "curium"),
-        ("Cn", "copemicium"),
-        ("Co", "cobalt"),
-        ("Cr", "chromium"),
-        ("Cs", "caesium"),
-        ("Cu", "copper"),
-        ("D", "deuterium"),
-        ("Db", "dubnium"),
-        ("Ds", "darmstadtium"),
-        ("Dy", "dysprosium"),
-        ("Er", "erbium"),
-        ("Es", "einsteinium"),
-        ("Eu", "europium"),
-        ("F", "fluorine"),
-        ("Fe", "iron"),
-        ("Fm", "fermium"),
-        ("Fr", "francium"),
-        ("Ga", "gallium"),
-        ("Gd", "gadolinium"),
-        ("Ge", "germanium"),
-        ("H", "hydrogen"),
-        ("He", "helium"),
-        ("Hf", "hafnium"),
-        ("Hg", "mercury"),
-        ("Ho", "holmium"),
-        ("Hs", "hassium"),
-        ("I", "iodine"),
-        ("In", "indium"),
-        ("Ir", "iridium"),
-        ("K", "potassium"),
-        ("Kr", "krypton"),
-        ("La", "lanthanum"),
-        ("Li", "lithium"),
-        ("Lr", "lawrencium"),
-        ("Lu", "lutetium"),
-        ("Md", "mendelevium"),
-        ("Mg", "magnesium"),
-        ("Mn", "manganese"),
-        ("Mo", "molybdenum"),
-        ("Mt", "meitnerium"),
-        ("N", "nitrogen"),
-        ("Na", "sodium"),
-        ("Nb", "niobium"),
-        ("Nd", "neodymium"),
-        ("Ne", "neon"),
-        ("Ni", "nickel"),
-        ("No", "nobelium"),
-        ("Np", "neptunium"),
-        ("O", "oxygen"),
-        ("Os", "osmium"),
-        ("P", "phosphorus"),
-        ("Pa", "protactinium"),
-        ("Pb", "lead"),
-        ("Pd", "palladium"),
-        ("Pm", "promethium"),
-        ("Po", "polonium"),
-        ("Pr", "praseodymium"),
-        ("Pt", "platinium"),
-        ("Pu", "plutonium"),
-        ("Ra", "radium"),
-        ("Rb", "rubidium"),
-        ("Re", "rhenium"),
-        ("Rf", "rutherfordium"),
-        ("Rg", "roentgenium"),
-        ("Rh", "rhodium"),
-        ("Rn", "radon"),
-        ("Ru", "ruthenium"),
-        ("S", "sulfure"),
-        ("Sb", "antimony"),
-        ("Sc", "scandium"),
-        ("Se", "sefeniuo"),
-        ("Sg", "seaborgium"),
-        ("Si", "silicon"),
-        ("Sm", "samarium"),
-        ("Sn", "tin"),
-        ("Sr", "strontium"),
-        ("Ta", "tantalum"),
-        ("Tb", "terbium"),
-        ("Tc", "technetium"),
-        ("Te", "tellurium"),
-        ("Th", "thorium"),
-        ("Ti", "titanium"),
-        ("Tl", "thallium"),
-        ("Tm", "thulium"),
-        ("U", "uranium"),
-        ("V", "vanadium"),
-        ("W", "tungsten"),
-        ("Xe", "xenon"),
-        ("Y", "yltrium"),
-        ("Yb", "ytterbium"),
-        ("Zn", "zinc"),
-        ("Zr", "zirconium"),
-    ]);
-
     // Rejecting empty formulas.
     if formula.is_empty() {
         return Err(Box::new(ToEmpiricalFormulaError::EmptyFormula));
@@ -209,9 +94,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
             maybe_next_char = None;
         }
 
-        debug!(
-            "current_char: {current_char} maybe_next_char: {maybe_next_char:?}"
-        );
+        debug!("current_char: {current_char} maybe_next_char: {maybe_next_char:?}");
 
         match current_char {
             '(' | '[' => {
@@ -251,7 +134,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
                 let search_atom = maybe_search_atom.unwrap();
 
                 // Does the atom exists?
-                if periodic_table.contains_key(&search_atom.as_str()) {
+                if PERIODIC_TABLE.contains_key(&search_atom.as_str()) {
                     atom_blocks.push(AtomBlock {
                         atom_name: search_atom.clone(),
                         parenthesis_depth,
