@@ -1,7 +1,6 @@
+use chimitheque_defines::{ALL_ZERO_RE, CAS_NUMBER_RE};
 use log::debug;
 use std::fmt::{Display, Formatter};
-
-use crate::define::{ALL_ZERO_RE, CAS_NUMBER_RE};
 
 #[derive(Debug, PartialEq)]
 pub enum CasNumberError {

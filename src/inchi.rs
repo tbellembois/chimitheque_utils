@@ -1,4 +1,4 @@
-use crate::define::{INCHI_REGEX, INCHIKEY_REGEX};
+use chimitheque_defines::{INCHI_REGEX, INCHIKEY_REGEX};
 
 pub fn is_inchi(inchi: &str) -> bool {
     INCHI_REGEX.is_match(inchi)
