@@ -39,7 +39,7 @@ regex = { version = "1.13.1", default-features = false }
 chimitheque_defines = { git = "https://github.com/tbellembois/chimitheque_defines.git", branch = "main" }
 
 [patch."https://github.com/tbellembois/chimitheque_defines.git"]
-chimitheque_defines = { path = "/home/tbellembois/workspace/workspace_rust/chimitheque_defines" }
+chimitheque_defines = { path = "../chimitheque_defines" }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
