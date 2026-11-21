@@ -27,4 +27,37 @@ mod tests {
         let whitespace = "   ";
         assert!(!is_canonical_smiles(whitespace));
     }
+
+    #[test]
+    fn test_valid_smiles() {
+        for smiles in [
+            "CC(=O)OC1=CC=CC=C1C(=O)O",     // aspirin
+            "CN1C=NC2=C1C(=O)N(C(=O)N2C)C", // caffeine
+            "c1ccccc1",                     // aromatic benzene
+            "[Na+].[Cl-]",                  // salt
+            "C/C=C/C",                      // double bond stereo
+            "N[C@@H](C)C(=O)O",             // chirality
+            "[2H]O[2H]",                    // isotopes
+            "C%12CCC%12",                   // two-digit ring number
+        ] {
+            assert!(is_canonical_smiles(smiles), "{smiles}");
+        }
+    }
+
+    #[test]
+    fn test_invalid_smiles() {
+        for smiles in [
+            "hello world",
+            "###",
+            "C1CC",     // unclosed ring
+            "Cc1ccccc", // unclosed aromatic ring
+            "C(C",      // unclosed branch
+            "CC)",      // unopened branch
+            "[Xx]",     // unknown element
+            "CC=",      // dangling bond
+            " CCO",     // surrounding whitespace
+        ] {
+            assert!(!is_canonical_smiles(smiles), "{smiles}");
+        }
+    }
 }
