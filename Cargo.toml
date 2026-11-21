@@ -6,7 +6,6 @@ authors = ["Thomas Bellembois <thomas.bellembois@proton.me>"]
 description = "Chemical utilities for Chimithèque"
 license = "GPL-3.0"
 repository = "https://github.com/tbellembois/chimitheque_utils"
-homepage = "https://github.com/tbellembois/chimitheque_utils"
 readme = "README.md"
 categories = ["database", "science"]
 keywords = ["chemistry", "biology", "database", "management"]
@@ -32,12 +31,14 @@ struct_excessive_bools = "allow"
 too_many_lines = "allow"
 
 [dependencies]
-env_logger = { version = "0.11.10", default-features = false }
 log = { version = "0.4.29", default-features = false }
 purr = { version = "0.9.0", default-features = false }
 regex = { version = "1.13.1", default-features = false }
 
 chimitheque_defines = { git = "https://github.com/tbellembois/chimitheque_defines.git", branch = "main" }
+
+[dev-dependencies]
+env_logger = { version = "0.11.10", default-features = false }
 
 [patch."https://github.com/tbellembois/chimitheque_defines.git"]
 chimitheque_defines = { path = "../chimitheque_defines" }
