@@ -2,7 +2,6 @@ use chimitheque_defines::PERIODIC_TABLE;
 use log::debug;
 use std::{
     collections::HashMap,
-    error::Error,
     fmt::{Display, Formatter},
     num::ParseIntError,
 };
@@ -52,7 +51,7 @@ impl std::error::Error for ToEmpiricalFormulaError {}
 ///             ^ . .      for each d>=2 multiply atom by 3; (Na c=3 Cl c=3) depth=1
 ///               ^ .      for each d>=1 multiply atom by 2; (Na c=6 Cl c=6 ; Ca=2 C=2) depth=0
 ///                 ^      forget any other char
-pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaError> {
     // A struct to store the atom count and parenthesis depth while parsing the formula.
     #[derive(Debug)]
     struct AtomBlock {
@@ -63,7 +62,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
 
     // Rejecting empty formulas.
     if formula.is_empty() {
-        return Err(Box::new(ToEmpiricalFormulaError::EmptyFormula));
+        return Err(ToEmpiricalFormulaError::EmptyFormula);
     }
 
     // Creating a vec from input for parsing.
@@ -108,7 +107,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
                 parenthesis_depth -= 1;
                 // Check wrong parenthesis number.
                 if parenthesis_depth < 0 {
-                    return Err(Box::new(ToEmpiricalFormulaError::UnbalancedParenthesis));
+                    return Err(ToEmpiricalFormulaError::UnbalancedParenthesis);
                 }
 
                 cursor_index += 1;
@@ -142,7 +141,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
                     });
                     debug!("found atom: {search_atom}");
                 } else {
-                    return Err(Box::new(ToEmpiricalFormulaError::UnknowAtom(search_atom)));
+                    return Err(ToEmpiricalFormulaError::UnknowAtom(search_atom));
                 }
 
                 // Updating the cursor.
@@ -174,7 +173,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
                 let count = match count_string.parse::<usize>() {
                     Ok(count) => Some(count),
                     Err(e) => {
-                        return Err(Box::new(ToEmpiricalFormulaError::CanNotParseNumber(e)));
+                        return Err(ToEmpiricalFormulaError::CanNotParseNumber(e));
                     }
                 };
                 debug!("count: {count:?}");
@@ -203,7 +202,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
                             last_atom_count.count = count.unwrap();
                         } else {
                             // We have a number after no known atom, this is an error.
-                            return Err(Box::new(ToEmpiricalFormulaError::NumberAfterUnknowAtom));
+                            return Err(ToEmpiricalFormulaError::NumberAfterUnknowAtom);
                         }
                     }
                     _ => (),
@@ -232,9 +231,9 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, Box<dyn Error + Sen
                 Some(atom_count) => *atom_count += atom_block.count,
                 None => {
                     // Should never happen.
-                    return Err(Box::new(ToEmpiricalFormulaError::UnexpectedNoneAtomCount(
+                    return Err(ToEmpiricalFormulaError::UnexpectedNoneAtomCount(
                         atom_block.atom_name.clone(),
-                    )));
+                    ));
                 }
             }
         } else {

@@ -31,15 +31,15 @@ impl std::error::Error for CasNumberError {}
 
 /// <https://en.wikipedia.org/wiki/CAS_Registry_Number>
 /// Check if a string is a valid CAS number.
-pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub fn is_cas_number(number: &str) -> Result<(), CasNumberError> {
     // Rejecting empty numbers.
     if number.is_empty() {
-        return Err(Box::new(CasNumberError::EmptyCasNumber));
+        return Err(CasNumberError::EmptyCasNumber);
     }
 
     // Capture groups and check number.
     let Some(captures) = CAS_NUMBER_RE.captures(number) else {
-        return Err(Box::new(CasNumberError::DigitGroupsCapture));
+        return Err(CasNumberError::DigitGroupsCapture);
     };
 
     let group1 = &captures["group1"];
@@ -48,7 +48,7 @@ pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Sen
     debug!("group1:{group1} - group2:{group2} - checkdigit_char:{checkdigit_char}");
 
     if ALL_ZERO_RE.is_match(group1) && ALL_ZERO_RE.is_match(group2) {
-        return Err(Box::new(CasNumberError::AllZeros));
+        return Err(CasNumberError::AllZeros);
     }
 
     // Multiplier that will increase at each operation.
@@ -61,7 +61,7 @@ pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Sen
     // Processing group2.
     for digit_char in group2_reversed.chars() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(Box::new(CasNumberError::CharTodigitConversion(digit_char)));
+            return Err(CasNumberError::CharTodigitConversion(digit_char));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -72,7 +72,7 @@ pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Sen
     // Processing group1.
     for digit_char in group1_reversed.chars() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(Box::new(CasNumberError::CharTodigitConversion(digit_char)));
+            return Err(CasNumberError::CharTodigitConversion(digit_char));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -85,7 +85,7 @@ pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Sen
     // Processing checkdigit.
     if let Some(digit_char) = checkdigit_char.chars().next() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(Box::new(CasNumberError::CharTodigitConversion(digit_char)));
+            return Err(CasNumberError::CharTodigitConversion(digit_char));
         };
 
         debug!("digit:{digit}");
@@ -93,10 +93,10 @@ pub fn is_cas_number(number: &str) -> Result<(), Box<dyn std::error::Error + Sen
         if digit.eq(&modulo) {
             Ok(())
         } else {
-            Err(Box::new(CasNumberError::CheckDigitDoesNotMatch))
+            Err(CasNumberError::CheckDigitDoesNotMatch)
         }
     } else {
-        Err(Box::new(CasNumberError::NoCheckDigitFound))
+        Err(CasNumberError::NoCheckDigitFound)
     }
 }
 

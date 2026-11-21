@@ -31,15 +31,15 @@ impl std::error::Error for CeNumberError {}
 
 /// <https://en.wikipedia.org/wiki/European_Community_number>
 /// Check if a string is a valid European Community number.
-pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub fn is_ce_number(number: &str) -> Result<(), CeNumberError> {
     // Rejecting empty numbers.
     if number.is_empty() {
-        return Err(Box::new(CeNumberError::EmptyCeNumber));
+        return Err(CeNumberError::EmptyCeNumber);
     }
 
     // Capture groups and check number.
     let Some(captures) = CE_NUMBER_RE.captures(number) else {
-        return Err(Box::new(CeNumberError::DigitGroupsCaptureError));
+        return Err(CeNumberError::DigitGroupsCaptureError);
     };
 
     let group1 = &captures["group1"];
@@ -48,7 +48,7 @@ pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send
     debug!("group1:{group1} - group2:{group2} - checkdigit_char:{checkdigit_char}");
 
     if ALL_ZERO_RE.is_match(group1) && ALL_ZERO_RE.is_match(group2) {
-        return Err(Box::new(CeNumberError::AllZeros));
+        return Err(CeNumberError::AllZeros);
     }
 
     // Multiplier that will increase at each operation.
@@ -59,9 +59,7 @@ pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send
     // Processing group1.
     for digit_char in group1.chars() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(Box::new(CeNumberError::CharTodigitConversionerror(
-                digit_char,
-            )));
+            return Err(CeNumberError::CharTodigitConversionerror(digit_char));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -70,9 +68,7 @@ pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send
     // Processing group2.
     for digit_char in group2.chars() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(Box::new(CeNumberError::CharTodigitConversionerror(
-                digit_char,
-            )));
+            return Err(CeNumberError::CharTodigitConversionerror(digit_char));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -85,18 +81,16 @@ pub fn is_ce_number(number: &str) -> Result<(), Box<dyn std::error::Error + Send
     // Processing checkdigit.
     if let Some(digit_char) = checkdigit_char.chars().next() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(Box::new(CeNumberError::CharTodigitConversionerror(
-                digit_char,
-            )));
+            return Err(CeNumberError::CharTodigitConversionerror(digit_char));
         };
 
         if digit.eq(&modulo) {
             Ok(())
         } else {
-            Err(Box::new(CeNumberError::CheckDigitDoesNotMatch))
+            Err(CeNumberError::CheckDigitDoesNotMatch)
         }
     } else {
-        Err(Box::new(CeNumberError::NoCheckDigitFound))
+        Err(CeNumberError::NoCheckDigitFound)
     }
 }
 
