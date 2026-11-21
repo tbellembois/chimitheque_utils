@@ -7,3 +7,7 @@ pub fn is_inchi(inchi: &str) -> bool {
 pub fn is_inchikey(key: &str) -> bool {
     INCHIKEY_REGEX.is_match(key)
 }
+
+#[cfg(test)]
+#[path = "inchi_tests.rs"]
+mod inchi_tests;
