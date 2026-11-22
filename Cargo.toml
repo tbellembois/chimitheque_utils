@@ -42,6 +42,3 @@ env_logger = { version = "0.11.10", default-features = false }
 
 [patch."https://github.com/tbellembois/chimitheque_defines.git"]
 chimitheque_defines = { path = "../chimitheque_defines" }
-
-[lints.rust]
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }

@@ -5,8 +5,6 @@
 //! computes empirical formulas and cleans strings.
 #![warn(missing_docs)]
 
-/// Generator of the casbin matcher of the permissions.
-pub mod casbin;
 /// CAS registry number check.
 pub mod casnumber;
 /// European Community number check.
