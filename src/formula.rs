@@ -48,10 +48,12 @@ impl std::error::Error for ToEmpiricalFormulaError {}
 
 /// Computes the empirical formula of a formula, e.g. `C2H6O` for `CH3CH2OH`.
 ///
-/// Atoms are sorted C, H, then the others in alphabetical order. A number after
+/// Atoms are sorted in the Hill order, as in `PubChem`: C, H, then the others
+/// in alphabetical order, or all in alphabetical order without C, e.g. `CaH2O2`
+/// for `Ca(OH)2`. A number after
 /// an atom or a closing parenthesis or bracket multiplies it. A number at the
 /// start of a part after a `.` or `·` multiplies the whole part, as in `PubChem`,
-/// e.g. `CuSO4.5H2O` gives `H10CuO9S`. Other chars are ignored, and so is a
+/// e.g. `CuSO4.5H2O` gives `CuH10O9S`. Other chars are ignored, and so is a
 /// number after them.
 ///
 /// Example of parsing method:
@@ -213,12 +215,13 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
 
     debug!("{atom_count_map:#?}");
 
-    // Building empirical formula.
-    // C, H and then in alphabetical order.
+    // Building empirical formula, in the Hill order: C, H and then in
+    // alphabetical order, or all in alphabetical order without C.
     let mut sorted_atoms: Vec<(String, usize)> = Vec::new();
-    for first_atom in ["C", "H"] {
-        if let Some(count) = atom_count_map.remove(first_atom) {
-            sorted_atoms.push((first_atom.to_string(), count));
+    if let Some(carbon_count) = atom_count_map.remove("C") {
+        sorted_atoms.push(("C".to_string(), carbon_count));
+        if let Some(hydrogen_count) = atom_count_map.remove("H") {
+            sorted_atoms.push(("H".to_string(), hydrogen_count));
         }
     }
     let mut other_atoms: Vec<(String, usize)> = atom_count_map.into_iter().collect();

@@ -49,9 +49,9 @@ mod tests {
             "C4H8O2",
             "C7H12O4",
             "C6H8O3",
-            "HClO3S",
+            "ClHO3S",
             "C2H2Cl2O2",
-            "HBF4",
+            "BF4H",
             "C3H6O2",
             "C7H8O",
             "C6H12O7",
@@ -91,7 +91,7 @@ mod tests {
             "C8H9Br",
             "C7H5N",
             "C6H8O7",
-            "H3BO3",
+            "BH3O3",
             "C2H7AsO2",
             "C7H7Cl",
             "C9H10O2",
@@ -119,7 +119,7 @@ mod tests {
             "H3O4P",
             "C2H2O4",
             "C7H7NO2",
-            "HClO4",
+            "ClHO4",
             "C6H3N3O7",
             "C3H4O3",
             "C20H28O2",
@@ -181,7 +181,7 @@ mod tests {
             "C2H3Cl3O2",
             "C11H12Cl2N2O5",
             "CHCl3",
-            "H4ClN",
+            "ClH4N",
             "C2H5NO",
             "C13H11Cl",
             "BaCl2",
@@ -521,14 +521,38 @@ mod tests {
         init_logger();
 
         for (formula, expected) in [
-            ("CuSO4.5H2O", "H10CuO9S"),
-            ("CuSO4·5H2O", "H10CuO9S"),
-            ("CuSO4 · 5H2O", "H10CuO9S"),
-            ("CaCl2.2H2O.2NH3", "H10CaCl2N2O2"),
+            ("CuSO4.5H2O", "CuH10O9S"),
+            ("CuSO4·5H2O", "CuH10O9S"),
+            ("CuSO4 · 5H2O", "CuH10O9S"),
+            ("CaCl2.2H2O.2NH3", "CaCl2H10N2O2"),
             // A part without a number counts once; a number after a letter is ignored.
-            ("CuSO4.H2O", "H2CuO5S"),
+            ("CuSO4.H2O", "CuH2O5S"),
             ("C15H10O7 · xH2O", "C15H12O8"),
-            ("CuSO4. x5H2O", "H2CuO5S"),
+            ("CuSO4. x5H2O", "CuH2O5S"),
+        ] {
+            assert_eq!(
+                to_empirical_formula(formula).unwrap(),
+                expected,
+                "{formula}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_hill_order() {
+        init_logger();
+
+        for (formula, expected) in [
+            // With C: C, H, then alphabetical.
+            ("CH3CH2OH", "C2H6O"),
+            ("NaCH3COO", "C2H3NaO2"),
+            ("CCl4", "CCl4"),
+            // Without C: all alphabetical.
+            ("Ca(OH)2", "CaH2O2"),
+            ("NaCl", "ClNa"),
+            ("H2O", "H2O"),
+            ("H2SO4", "H2O4S"),
+            ("NH4Cl", "ClH4N"),
         ] {
             assert_eq!(
                 to_empirical_formula(formula).unwrap(),
