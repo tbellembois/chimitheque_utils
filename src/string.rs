@@ -14,14 +14,9 @@ pub enum Transform {
 /// Optionally, it can convert the string to uppercase or lowercase.
 #[must_use]
 pub fn clean(s: &str, transform: Transform) -> String {
-    let mut result: String;
-
-    // Trim whitespaces.
-    result = s.trim().to_string();
-
-    // Replace more than one space.
-    let words: Vec<_> = result.split_whitespace().collect();
-    result = words.join(" ");
+    // Trim and replace more than one whitespace: `split_whitespace` drops the
+    // leading and trailing ones.
+    let result = s.split_whitespace().collect::<Vec<_>>().join(" ");
 
     match transform {
         Transform::None => result,
