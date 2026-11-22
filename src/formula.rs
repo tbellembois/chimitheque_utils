@@ -41,23 +41,25 @@ impl std::error::Error for ToEmpiricalFormulaError {}
 /// Sort order: C and H atoms then the others in alphabetical order.
 /// Example of parsing method:
 /// Cl(CaC2(NaCl)3)2.Na=P
-/// ^^. .. . . .. . .      Cl c=1 d=0
-///   ^ .. . . .. . .      depth=1
-///    ^^. . . .. . .      Ca c=1 d=1
-///      ^ . . .. . .      C  c=2 d=1
-///        ^ . .. . .      depth=2
-///         ^^ .. . .      Na c=1 d=2
-///           ^^. . .      Cl c=1 d=2
-///             ^ . .      for each d>=2 multiply atom by 3; (Na c=3 Cl c=3) depth=1
-///               ^ .      for each d>=1 multiply atom by 2; (Na c=6 Cl c=6 ; Ca=2 C=2) depth=0
-///                 ^      forget any other char
+/// ^^. .. . . .. . .      Cl c=1
+///   ^ .. . . .. . .      open block 1
+///    ^^. . . .. . .      Ca c=1
+///      ^ . . .. . .      C  c=2
+///        ^ . .. . .      open block 2
+///         ^^ .. . .      Na c=1
+///           ^^. . .      Cl c=1
+///             ^ . .      close block 2, multiply its atoms by 3 (Na c=3 Cl c=3)
+///               ^ .      close block 1, multiply its atoms by 2 (Ca c=2 C c=4 Na c=6 Cl c=6)
+///                 ^      forget any other char, and a number after it
 pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaError> {
-    // A struct to store the atom count and parenthesis depth while parsing the formula.
-    #[derive(Debug)]
-    struct AtomBlock {
-        atom_name: String,
-        parenthesis_depth: isize, // use isize to avoid conversions.
-        count: usize,
+    // What a number found while parsing applies to.
+    enum Previous {
+        // The last found atom.
+        Atom,
+        // The atoms of the block just closed, from this index of `atoms`.
+        ClosedBlock(usize),
+        // Nothing: the number is ignored.
+        Other,
     }
 
     // Rejecting empty formulas.
@@ -68,214 +70,124 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
     // Creating a vec from input for parsing.
     let formula_vec: Vec<char> = formula.chars().collect();
 
-    let mut atom_blocks: Vec<AtomBlock> = Vec::new();
+    // The found atoms, with their count.
+    let mut atoms: Vec<(String, usize)> = Vec::new();
+    // For each open block, the index in `atoms` of its first atom.
+    let mut open_blocks: Vec<usize> = Vec::new();
+    let mut previous = Previous::Other;
 
     // Cursor index while parsing the formula.
     let mut cursor_index = 0;
-    // Current parenthesis depth.
-    let mut parenthesis_depth: isize = 0;
-    // Char under cursor.
-    let mut current_char: char;
-    // Current char at the previous loop
-    let mut previous_char: Option<char> = None;
-    // Possible char after current char.
-    let mut maybe_next_char: Option<char>;
 
     // Parsing the formula.
     while cursor_index < formula_vec.len() {
-        // Reading the first char under the cursor.
-        current_char = formula_vec[cursor_index];
-
-        // And the next if we are not at the end of the formula.
-        if cursor_index < formula_vec.len() - 1 {
-            maybe_next_char = Some(formula_vec[cursor_index + 1]);
-        } else {
-            maybe_next_char = None;
-        }
-
-        debug!("current_char: {current_char} maybe_next_char: {maybe_next_char:?}");
+        let current_char = formula_vec[cursor_index];
+        debug!("current_char: {current_char}");
 
         match current_char {
             '(' | '[' => {
-                // Opening block, increase depth and increment cursor.
-                parenthesis_depth += 1;
+                open_blocks.push(atoms.len());
+                previous = Previous::Other;
                 cursor_index += 1;
-                debug!("parenthesis_depth: {parenthesis_depth}");
             }
             ')' | ']' => {
-                // Closing block, decrease depth and decrement cursor.
-                parenthesis_depth -= 1;
-                // Check wrong parenthesis number.
-                if parenthesis_depth < 0 {
+                let Some(block_start) = open_blocks.pop() else {
                     return Err(ToEmpiricalFormulaError::UnbalancedParenthesis);
-                }
-
+                };
+                previous = Previous::ClosedBlock(block_start);
                 cursor_index += 1;
-                debug!("parenthesis_depth: {parenthesis_depth}");
             }
             'A'..='Z' => {
-                // Building the atom search string.
-                let mut maybe_search_atom: Option<String> = None;
-
-                // Beginning of an atom.
-                // 1. Two chars atom?
-                if let Some(next_char) = maybe_next_char
-                    && next_char.is_ascii_lowercase()
-                {
-                    maybe_search_atom = Some(format!("{current_char}{next_char}"));
-                }
-                // 2. One char atom.
-                if maybe_search_atom.is_none() {
-                    maybe_search_atom = Some(format!("{current_char}"));
-                }
-
-                // We can unwrap safely.
-                let search_atom = maybe_search_atom.unwrap();
+                // A one or two chars atom.
+                let atom_len = match formula_vec.get(cursor_index + 1) {
+                    Some(next_char) if next_char.is_ascii_lowercase() => 2,
+                    _ => 1,
+                };
+                let atom: String = formula_vec[cursor_index..cursor_index + atom_len]
+                    .iter()
+                    .collect();
 
                 // Does the atom exists?
-                if PERIODIC_TABLE.contains_key(&search_atom.as_str()) {
-                    atom_blocks.push(AtomBlock {
-                        atom_name: search_atom.clone(),
-                        parenthesis_depth,
-                        count: 1,
-                    });
-                    debug!("found atom: {search_atom}");
-                } else {
-                    return Err(ToEmpiricalFormulaError::UnknowAtom(search_atom));
+                if !PERIODIC_TABLE.contains_key(atom.as_str()) {
+                    return Err(ToEmpiricalFormulaError::UnknowAtom(atom));
                 }
+                debug!("found atom: {atom}");
 
-                // Updating the cursor.
-                cursor_index += search_atom.len();
+                atoms.push((atom, 1));
+                previous = Previous::Atom;
+                cursor_index += atom_len;
             }
-
             '0'..='9' => {
-                // Building the count search string.
-                let mut maybe_count_string: Option<String> = None;
+                // Reading all the digits of the number.
+                let number_len = formula_vec[cursor_index..]
+                    .iter()
+                    .take_while(|c| c.is_ascii_digit())
+                    .count();
+                let number_string: String = formula_vec[cursor_index..cursor_index + number_len]
+                    .iter()
+                    .collect();
+                let count = number_string
+                    .parse::<usize>()
+                    .map_err(ToEmpiricalFormulaError::CanNotParseNumber)?;
+                debug!("count: {count}");
 
-                // Beginning a number.
-                // 1. two digit number?
-                // FIXME: we assume that the number of atoms is < 100.
-                if let Some(next_char) = maybe_next_char
-                    && next_char.is_ascii_digit()
-                {
-                    maybe_count_string = Some(format!("{current_char}{next_char}"));
-                }
-
-                // One digit number.
-                if maybe_count_string.is_none() {
-                    maybe_count_string = Some(format!("{current_char}"));
-                }
-
-                // We can unwrap safely.
-                let count_string = maybe_count_string.unwrap();
-
-                // Converting into usize.
-                let count = match count_string.parse::<usize>() {
-                    Ok(count) => Some(count),
-                    Err(e) => {
-                        return Err(ToEmpiricalFormulaError::CanNotParseNumber(e));
-                    }
-                };
-                debug!("count: {count:?}");
-
-                // The count can be for an atom or a closing parenthesis.
-                match previous_char {
-                    Some(')' | ']') => {
-                        // The count if for a parenthesis block.
-                        // For each atom_count with a parenthesis_depth > parenthesis_depth, multiplying the count.
-                        for atom in &mut atom_blocks {
-                            debug!("atom: {atom:?}");
-
-                            if atom.parenthesis_depth > parenthesis_depth {
-                                atom.count *= count.unwrap();
-                                debug!(
-                                    "updating atom count for {}: {}",
-                                    atom.atom_name, atom.count
-                                );
-                            }
-                        }
-                    }
-                    Some('a'..='a' | 'A'..='Z') => {
-                        // The count is for the last atom of atom_blocks.
-                        // Updating the entry.
-                        if let Some(last_atom_count) = atom_blocks.last_mut() {
-                            last_atom_count.count = count.unwrap();
-                        } else {
-                            // We have a number after no known atom, this is an error.
+                match previous {
+                    Previous::Atom => {
+                        let Some((_, atom_count)) = atoms.last_mut() else {
                             return Err(ToEmpiricalFormulaError::NumberAfterUnknowAtom);
+                        };
+                        *atom_count = count;
+                    }
+                    Previous::ClosedBlock(block_start) => {
+                        for (_, atom_count) in &mut atoms[block_start..] {
+                            *atom_count = atom_count.saturating_mul(count);
                         }
                     }
-                    _ => (),
+                    Previous::Other => (),
                 }
 
-                // Updating the cursor.
-                cursor_index += count_string.len();
+                previous = Previous::Other;
+                cursor_index += number_len;
             }
             _ => {
                 debug!("leaving char: {current_char}");
+                previous = Previous::Other;
                 cursor_index += 1;
             }
         }
-
-        previous_char = Some(current_char);
     }
 
-    debug!("{atom_blocks:#?}");
+    // A block not closed.
+    if !open_blocks.is_empty() {
+        return Err(ToEmpiricalFormulaError::UnbalancedParenthesis);
+    }
 
-    // Building a map from atom_count.
+    // Adding the counts of the same atoms.
     let mut atom_count_map: HashMap<String, usize> = HashMap::new();
-
-    for atom_block in &atom_blocks {
-        if atom_count_map.contains_key(&atom_block.atom_name) {
-            match atom_count_map.get_mut(&atom_block.atom_name) {
-                Some(atom_count) => *atom_count += atom_block.count,
-                None => {
-                    // Should never happen.
-                    return Err(ToEmpiricalFormulaError::UnexpectedNoneAtomCount(
-                        atom_block.atom_name.clone(),
-                    ));
-                }
-            }
-        } else {
-            atom_count_map.insert(atom_block.atom_name.clone(), atom_block.count);
-        }
+    for (atom, count) in atoms {
+        let total = atom_count_map.entry(atom).or_insert(0);
+        *total = total.saturating_add(count);
     }
 
     debug!("{atom_count_map:#?}");
 
     // Building empirical formula.
     // C, H and then in alphabetical order.
-    let mut final_formula: String = String::new();
-
-    if atom_count_map.contains_key("C") {
-        if atom_count_map.get("C").unwrap() == &1 {
-            final_formula.push('C');
-        } else {
-            final_formula.push_str(format!("C{}", atom_count_map.get("C").unwrap()).as_str());
+    let mut sorted_atoms: Vec<(String, usize)> = Vec::new();
+    for first_atom in ["C", "H"] {
+        if let Some(count) = atom_count_map.remove(first_atom) {
+            sorted_atoms.push((first_atom.to_string(), count));
         }
-
-        atom_count_map.remove("C");
     }
-    if atom_count_map.contains_key("H") {
-        if atom_count_map.get("H").unwrap() == &1 {
-            final_formula.push('H');
-        } else {
-            final_formula.push_str(format!("H{}", atom_count_map.get("H").unwrap()).as_str());
-        }
-        atom_count_map.remove("H");
-    }
+    let mut other_atoms: Vec<(String, usize)> = atom_count_map.into_iter().collect();
+    other_atoms.sort();
+    sorted_atoms.extend(other_atoms);
 
-    // Sorting the last atoms.
-    let mut sorted_keys: Vec<&String> = atom_count_map.keys().collect();
-    sorted_keys.sort();
-
-    for key in sorted_keys {
-        let (atom_name, atom_count) = atom_count_map.get_key_value(key).unwrap();
-
-        if atom_count == &1 {
-            final_formula.push_str(atom_name.clone().as_str());
-        } else {
-            final_formula.push_str(format!("{atom_name}{atom_count}").as_str());
+    let mut final_formula = String::new();
+    for (atom, count) in sorted_atoms {
+        final_formula.push_str(&atom);
+        if count != 1 {
+            final_formula.push_str(&count.to_string());
         }
     }
 

@@ -468,4 +468,51 @@ mod tests {
         let error = ToEmpiricalFormulaError::EmptyFormula;
         assert_eq!(error.to_string(), "empty formula");
     }
+
+    #[test]
+    fn test_block_multiplier_applies_to_its_block_only() {
+        init_logger();
+
+        assert_eq!(to_empirical_formula("(CH3)2(OH)3").unwrap(), "C2H9O3");
+        assert_eq!(
+            to_empirical_formula("Cl(CaC2(NaCl)3)2").unwrap(),
+            "C4Ca2Cl7Na6"
+        );
+        assert_eq!(to_empirical_formula("[(CH3)2N]2CO").unwrap(), "C5H12N2O");
+    }
+
+    #[test]
+    fn test_counts_of_more_than_two_digits() {
+        init_logger();
+
+        assert_eq!(to_empirical_formula("C100H202").unwrap(), "C100H202");
+        assert_eq!(
+            to_empirical_formula("C254H377N65O75S6").unwrap(),
+            "C254H377N65O75S6"
+        );
+        assert_eq!(to_empirical_formula("(CH2)120").unwrap(), "C120H240");
+    }
+
+    #[test]
+    fn test_unbalanced_parenthesis() {
+        init_logger();
+
+        for formula in ["(CH3", "C[H3", "((CH3)2", "CH3)", "H2O)("] {
+            assert_eq!(
+                to_empirical_formula(formula),
+                Err(ToEmpiricalFormulaError::UnbalancedParenthesis),
+                "{formula}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_too_big_count_is_an_error() {
+        init_logger();
+
+        assert!(matches!(
+            to_empirical_formula("C99999999999999999999999"),
+            Err(ToEmpiricalFormulaError::CanNotParseNumber(_))
+        ));
+    }
 }
