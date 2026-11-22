@@ -2,13 +2,21 @@ use chimitheque_defines::{ALL_ZERO_RE, CAS_NUMBER_RE};
 use log::debug;
 use std::fmt::{Display, Formatter};
 
+/// Why a string is not a valid CAS number.
 #[derive(Debug, PartialEq)]
 pub enum CasNumberError {
+    /// The string is empty.
     EmptyCasNumber,
+    /// The string is not formatted as a CAS number, e.g. `7732-18-5`.
     DigitGroupsCapture,
+    /// A char is not a digit. Not returned: the format check is done before.
     CharTodigitConversion(char),
+    /// The check digit is missing. Not returned: the format check is done
+    /// before.
     NoCheckDigitFound,
+    /// The check digit is not the computed one.
     CheckDigitDoesNotMatch,
+    /// All the digits before the check digit are zeros.
     AllZeros,
 }
 
@@ -29,8 +37,10 @@ impl Display for CasNumberError {
 
 impl std::error::Error for CasNumberError {}
 
-/// <https://en.wikipedia.org/wiki/CAS_Registry_Number>
-/// Check if a string is a valid CAS number.
+/// Checks that a string is a valid CAS number: 2 to 7 digits, 2 digits and a
+/// check digit separated by dashes, e.g. `7732-18-5`.
+///
+/// See <https://en.wikipedia.org/wiki/CAS_Registry_Number>.
 pub fn is_cas_number(number: &str) -> Result<(), CasNumberError> {
     // Rejecting empty numbers.
     if number.is_empty() {

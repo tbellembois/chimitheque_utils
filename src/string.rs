@@ -1,11 +1,16 @@
+/// A case change applied by [`clean`].
 #[derive(Copy, Clone)]
 pub enum Transform {
+    /// Keeps the case.
     None,
+    /// Converts to uppercase.
     Uppercase,
+    /// Converts to lowercase.
     Lowercase,
 }
 
-/// Cleans a string by trimming whitespaces and replacing multiple spaces with a single space.
+/// Cleans a string by trimming whitespaces and replacing multiple whitespaces
+/// with a single space.
 /// Optionally, it can convert the string to uppercase or lowercase.
 #[must_use]
 pub fn clean(s: &str, transform: Transform) -> String {

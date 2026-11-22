@@ -1,4 +1,8 @@
 // Make changes in casbin.xlsx too.
+/// Prints the casbin matcher of the permissions, to copy into the
+/// `[matchers]` section of `chimitheque_back/src/casbin/policy.conf`.
+///
+/// Run it with `cargo run`.
 #[cfg(not(tarpaulin_include))]
 pub fn build_casbin_matchers() {
     // Request person must match policy person.

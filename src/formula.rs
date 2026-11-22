@@ -6,13 +6,22 @@ use std::{
     num::ParseIntError,
 };
 
+/// Why an empirical formula can not be computed from a formula.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ToEmpiricalFormulaError {
+    /// A parenthesis or bracket is closed without being opened, or is not
+    /// closed.
     UnbalancedParenthesis,
+    /// An atom is not in the periodic table, e.g. `Xy`.
     UnknowAtom(String),
+    /// A number is too big.
     CanNotParseNumber(ParseIntError),
+    /// A number follows an unknown atom. Not returned: an unknown atom is
+    /// rejected first.
     NumberAfterUnknowAtom,
+    /// An atom has no count. Not returned anymore.
     UnexpectedNoneAtomCount(String),
+    /// The formula is empty.
     EmptyFormula,
 }
 
@@ -37,8 +46,12 @@ impl Display for ToEmpiricalFormulaError {
 
 impl std::error::Error for ToEmpiricalFormulaError {}
 
-/// Sorts the empirical formula from a string.
-/// Sort order: C and H atoms then the others in alphabetical order.
+/// Computes the empirical formula of a formula, e.g. `C2H6O` for `CH3CH2OH`.
+///
+/// Atoms are sorted C, H, then the others in alphabetical order. A number after
+/// an atom or a closing parenthesis or bracket multiplies it. Other chars are
+/// ignored, and so is a number after them, e.g. the `5` of `CuSO4.5H2O`.
+///
 /// Example of parsing method:
 /// Cl(CaC2(NaCl)3)2.Na=P
 /// ^^. .. . . .. . .      Cl c=1

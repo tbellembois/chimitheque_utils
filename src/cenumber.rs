@@ -2,13 +2,21 @@ use chimitheque_defines::{ALL_ZERO_RE, CE_NUMBER_RE};
 use log::debug;
 use std::fmt::{Display, Formatter};
 
+/// Why a string is not a valid European Community number.
 #[derive(Debug, PartialEq)]
 pub enum CeNumberError {
+    /// The string is empty.
     EmptyCeNumber,
+    /// The string is not formatted as a CE number, e.g. `231-791-2`.
     DigitGroupsCaptureError,
+    /// A char is not a digit. Not returned: the format check is done before.
     CharTodigitConversionerror(char),
+    /// The check digit is missing. Not returned: the format check is done
+    /// before.
     NoCheckDigitFound,
+    /// The check digit is not the computed one.
     CheckDigitDoesNotMatch,
+    /// All the digits before the check digit are zeros.
     AllZeros,
 }
 
@@ -29,8 +37,10 @@ impl Display for CeNumberError {
 
 impl std::error::Error for CeNumberError {}
 
-/// <https://en.wikipedia.org/wiki/European_Community_number>
-/// Check if a string is a valid European Community number.
+/// Checks that a string is a valid European Community number: two groups of 3
+/// digits and a check digit separated by dashes, e.g. `231-791-2`.
+///
+/// See <https://en.wikipedia.org/wiki/European_Community_number>.
 pub fn is_ce_number(number: &str) -> Result<(), CeNumberError> {
     // Rejecting empty numbers.
     if number.is_empty() {
