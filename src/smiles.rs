@@ -8,7 +8,7 @@ use purr::{graph::Builder, read::read};
 /// canonical form, nor its chemistry (e.g. valences). Surrounding whitespace is
 /// not accepted.
 #[must_use]
-pub fn is_canonical_smiles(smiles: &str) -> bool {
+pub fn is_smiles(smiles: &str) -> bool {
     let mut builder = Builder::new();
     // `read` checks the grammar; `build` checks that every ring is closed.
     read(smiles, &mut builder, None).is_ok() && builder.build().is_ok()

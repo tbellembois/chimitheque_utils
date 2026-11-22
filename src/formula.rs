@@ -13,12 +13,12 @@ pub enum ToEmpiricalFormulaError {
     /// closed.
     UnbalancedParenthesis,
     /// An atom is not in the periodic table, e.g. `Xy`.
-    UnknowAtom(String),
+    UnknownAtom(String),
     /// A number is too big.
     CanNotParseNumber(ParseIntError),
     /// A number follows an unknown atom. Not returned: an unknown atom is
     /// rejected first.
-    NumberAfterUnknowAtom,
+    NumberAfterUnknownAtom,
     /// An atom has no count. Not returned anymore.
     UnexpectedNoneAtomCount(String),
     /// The formula is empty.
@@ -29,11 +29,11 @@ impl Display for ToEmpiricalFormulaError {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match self {
             ToEmpiricalFormulaError::UnbalancedParenthesis => write!(f, "unbalanced parenthesis"),
-            ToEmpiricalFormulaError::UnknowAtom(s) => write!(f, "unknown atom {s}"),
+            ToEmpiricalFormulaError::UnknownAtom(s) => write!(f, "unknown atom {s}"),
             ToEmpiricalFormulaError::CanNotParseNumber(e) => {
                 write!(f, "can not parse number: {e}")
             }
-            ToEmpiricalFormulaError::NumberAfterUnknowAtom => {
+            ToEmpiricalFormulaError::NumberAfterUnknownAtom => {
                 write!(f, "found a number after no known atom")
             }
             ToEmpiricalFormulaError::UnexpectedNoneAtomCount(s) => {
@@ -147,7 +147,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
 
                 // Does the atom exists?
                 if !PERIODIC_TABLE.contains_key(atom.as_str()) {
-                    return Err(ToEmpiricalFormulaError::UnknowAtom(atom));
+                    return Err(ToEmpiricalFormulaError::UnknownAtom(atom));
                 }
                 debug!("found atom: {atom}");
 
@@ -172,7 +172,7 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
                 match previous {
                     Previous::Atom => {
                         let Some((_, atom_count)) = atoms.last_mut() else {
-                            return Err(ToEmpiricalFormulaError::NumberAfterUnknowAtom);
+                            return Err(ToEmpiricalFormulaError::NumberAfterUnknownAtom);
                         };
                         *atom_count = count;
                     }

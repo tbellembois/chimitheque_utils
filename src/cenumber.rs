@@ -8,9 +8,9 @@ pub enum CeNumberError {
     /// The string is empty.
     EmptyCeNumber,
     /// The string is not formatted as a CE number, e.g. `231-791-2`.
-    DigitGroupsCaptureError,
+    DigitGroupsCapture,
     /// A char is not a digit. Not returned: the format check is done before.
-    CharTodigitConversionerror(char),
+    CharToDigitConversion(char),
     /// The check digit is missing. Not returned: the format check is done
     /// before.
     NoCheckDigitFound,
@@ -23,8 +23,8 @@ pub enum CeNumberError {
 impl Display for CeNumberError {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match &self {
-            CeNumberError::DigitGroupsCaptureError => write!(f, "can not capture digit groups"),
-            CeNumberError::CharTodigitConversionerror(char) => {
+            CeNumberError::DigitGroupsCapture => write!(f, "can not capture digit groups"),
+            CeNumberError::CharToDigitConversion(char) => {
                 write!(f, "can not convert {char} into digit")
             }
             CeNumberError::NoCheckDigitFound => write!(f, "no check digit found"),
@@ -49,7 +49,7 @@ pub fn is_ce_number(number: &str) -> Result<(), CeNumberError> {
 
     // Capture groups and check number.
     let Some(captures) = CE_NUMBER_RE.captures(number) else {
-        return Err(CeNumberError::DigitGroupsCaptureError);
+        return Err(CeNumberError::DigitGroupsCapture);
     };
 
     let group1 = &captures["group1"];
@@ -69,7 +69,7 @@ pub fn is_ce_number(number: &str) -> Result<(), CeNumberError> {
     // Processing group1.
     for digit_char in group1.chars() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(CeNumberError::CharTodigitConversionerror(digit_char));
+            return Err(CeNumberError::CharToDigitConversion(digit_char));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -78,7 +78,7 @@ pub fn is_ce_number(number: &str) -> Result<(), CeNumberError> {
     // Processing group2.
     for digit_char in group2.chars() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(CeNumberError::CharTodigitConversionerror(digit_char));
+            return Err(CeNumberError::CharToDigitConversion(digit_char));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -91,7 +91,7 @@ pub fn is_ce_number(number: &str) -> Result<(), CeNumberError> {
     // Processing checkdigit.
     if let Some(digit_char) = checkdigit_char.chars().next() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(CeNumberError::CharTodigitConversionerror(digit_char));
+            return Err(CeNumberError::CharToDigitConversion(digit_char));
         };
 
         if digit.eq(&modulo) {

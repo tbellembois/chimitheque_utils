@@ -10,7 +10,7 @@ pub enum CasNumberError {
     /// The string is not formatted as a CAS number, e.g. `7732-18-5`.
     DigitGroupsCapture,
     /// A char is not a digit. Not returned: the format check is done before.
-    CharTodigitConversion(char),
+    CharToDigitConversion(char),
     /// The check digit is missing. Not returned: the format check is done
     /// before.
     NoCheckDigitFound,
@@ -24,7 +24,7 @@ impl Display for CasNumberError {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         match &self {
             CasNumberError::DigitGroupsCapture => write!(f, "can not capture digit groups"),
-            CasNumberError::CharTodigitConversion(char) => {
+            CasNumberError::CharToDigitConversion(char) => {
                 write!(f, "can not convert {char} into digit")
             }
             CasNumberError::NoCheckDigitFound => write!(f, "no check digit found"),
@@ -71,7 +71,7 @@ pub fn is_cas_number(number: &str) -> Result<(), CasNumberError> {
     // Processing group2.
     for digit_char in group2_reversed.chars() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(CasNumberError::CharTodigitConversion(digit_char));
+            return Err(CasNumberError::CharToDigitConversion(digit_char));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -82,7 +82,7 @@ pub fn is_cas_number(number: &str) -> Result<(), CasNumberError> {
     // Processing group1.
     for digit_char in group1_reversed.chars() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(CasNumberError::CharTodigitConversion(digit_char));
+            return Err(CasNumberError::CharToDigitConversion(digit_char));
         };
         total += multiplier * digit;
         multiplier += 1;
@@ -95,7 +95,7 @@ pub fn is_cas_number(number: &str) -> Result<(), CasNumberError> {
     // Processing checkdigit.
     if let Some(digit_char) = checkdigit_char.chars().next() {
         let Some(digit) = digit_char.to_digit(10) else {
-            return Err(CasNumberError::CharTodigitConversion(digit_char));
+            return Err(CasNumberError::CharToDigitConversion(digit_char));
         };
 
         debug!("digit:{digit}");

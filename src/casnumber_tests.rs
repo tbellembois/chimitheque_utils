@@ -294,7 +294,7 @@ mod tests {
 
     #[test]
     fn test_format_char_to_digit_conversion_error() {
-        let error = CasNumberError::CharTodigitConversion('a');
+        let error = CasNumberError::CharToDigitConversion('a');
         assert_eq!(error.to_string(), "can not convert a into digit");
     }
 

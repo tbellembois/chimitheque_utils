@@ -215,13 +215,13 @@ mod tests {
 
     #[test]
     fn test_format_digit_groups_capture_error() {
-        let error = CeNumberError::DigitGroupsCaptureError;
+        let error = CeNumberError::DigitGroupsCapture;
         assert_eq!(error.to_string(), "can not capture digit groups");
     }
 
     #[test]
     fn test_format_char_to_digit_conversion_error() {
-        let error = CeNumberError::CharTodigitConversionerror('a');
+        let error = CeNumberError::CharToDigitConversion('a');
         assert_eq!(error.to_string(), "can not convert a into digit");
     }
 

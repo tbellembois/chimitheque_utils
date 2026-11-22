@@ -5,27 +5,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_canonical_smiles() {
-        let canonical_smiles = "CCO";
-        assert!(is_canonical_smiles(canonical_smiles));
+    fn test_ethanol_is_valid() {
+        let valid_smiles = "CCO";
+        assert!(is_smiles(valid_smiles));
     }
 
     #[test]
-    fn test_non_canonical_smiles() {
-        let non_canonical_smiles = "😀";
-        assert!(!is_canonical_smiles(non_canonical_smiles));
+    fn test_emoji_is_invalid() {
+        let invalid_smiles = "😀";
+        assert!(!is_smiles(invalid_smiles));
     }
 
     #[test]
     fn test_empty_string() {
         let empty_string = "";
-        assert!(!is_canonical_smiles(empty_string));
+        assert!(!is_smiles(empty_string));
     }
 
     #[test]
     fn test_whitespace() {
         let whitespace = "   ";
-        assert!(!is_canonical_smiles(whitespace));
+        assert!(!is_smiles(whitespace));
     }
 
     #[test]
@@ -40,7 +40,7 @@ mod tests {
             "[2H]O[2H]",                    // isotopes
             "C%12CCC%12",                   // two-digit ring number
         ] {
-            assert!(is_canonical_smiles(smiles), "{smiles}");
+            assert!(is_smiles(smiles), "{smiles}");
         }
     }
 
@@ -57,7 +57,7 @@ mod tests {
             "CC=",      // dangling bond
             " CCO",     // surrounding whitespace
         ] {
-            assert!(!is_canonical_smiles(smiles), "{smiles}");
+            assert!(!is_smiles(smiles), "{smiles}");
         }
     }
 }

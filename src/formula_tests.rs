@@ -434,8 +434,8 @@ mod tests {
     }
 
     #[test]
-    fn test_format_unknow_atom_error() {
-        let error = ToEmpiricalFormulaError::UnknowAtom("Xy".to_string());
+    fn test_format_unknown_atom_error() {
+        let error = ToEmpiricalFormulaError::UnknownAtom("Xy".to_string());
         assert_eq!(error.to_string(), "unknown atom Xy");
     }
 
@@ -449,8 +449,8 @@ mod tests {
     }
 
     #[test]
-    fn test_format_number_after_unknow_atom_error() {
-        let error = ToEmpiricalFormulaError::NumberAfterUnknowAtom;
+    fn test_format_number_after_unknown_atom_error() {
+        let error = ToEmpiricalFormulaError::NumberAfterUnknownAtom;
         assert_eq!(error.to_string(), "found a number after no known atom");
     }
 
