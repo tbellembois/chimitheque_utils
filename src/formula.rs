@@ -49,8 +49,10 @@ impl std::error::Error for ToEmpiricalFormulaError {}
 /// Computes the empirical formula of a formula, e.g. `C2H6O` for `CH3CH2OH`.
 ///
 /// Atoms are sorted C, H, then the others in alphabetical order. A number after
-/// an atom or a closing parenthesis or bracket multiplies it. Other chars are
-/// ignored, and so is a number after them, e.g. the `5` of `CuSO4.5H2O`.
+/// an atom or a closing parenthesis or bracket multiplies it. A number at the
+/// start of a part after a `.` or `·` multiplies the whole part, as in `PubChem`,
+/// e.g. `CuSO4.5H2O` gives `H10CuO9S`. Other chars are ignored, and so is a
+/// number after them.
 ///
 /// Example of parsing method:
 /// Cl(CaC2(NaCl)3)2.Na=P
@@ -63,7 +65,7 @@ impl std::error::Error for ToEmpiricalFormulaError {}
 ///           ^^. . .      Cl c=1
 ///             ^ . .      close block 2, multiply its atoms by 3 (Na c=3 Cl c=3)
 ///               ^ .      close block 1, multiply its atoms by 2 (Ca c=2 C c=4 Na c=6 Cl c=6)
-///                 ^      forget any other char, and a number after it
+///                 ^      start a new part; forget any other char, and a number after it
 pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaError> {
     // What a number found while parsing applies to.
     enum Previous {
@@ -71,8 +73,17 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
         Atom,
         // The atoms of the block just closed, from this index of `atoms`.
         ClosedBlock(usize),
+        // A `.` or `·` separator: the number multiplies the next part.
+        Separator,
         // Nothing: the number is ignored.
         Other,
+    }
+
+    // Multiplies the counts of `atoms` by `factor`.
+    fn multiply(atoms: &mut [(String, usize)], factor: usize) {
+        for (_, count) in atoms {
+            *count = count.saturating_mul(factor);
+        }
     }
 
     // Rejecting empty formulas.
@@ -87,6 +98,10 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
     let mut atoms: Vec<(String, usize)> = Vec::new();
     // For each open block, the index in `atoms` of its first atom.
     let mut open_blocks: Vec<usize> = Vec::new();
+    // The index in `atoms` of the first atom of the current part, and the
+    // number multiplying the part, e.g. `5` for the `5H2O` part of `CuSO4.5H2O`.
+    let mut part_start = 0;
+    let mut part_multiplier = 1;
     let mut previous = Previous::Other;
 
     // Cursor index while parsing the formula.
@@ -98,6 +113,14 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
         debug!("current_char: {current_char}");
 
         match current_char {
+            '.' | '·' => {
+                // A new part.
+                multiply(&mut atoms[part_start..], part_multiplier);
+                part_start = atoms.len();
+                part_multiplier = 1;
+                previous = Previous::Separator;
+                cursor_index += 1;
+            }
             '(' | '[' => {
                 open_blocks.push(atoms.len());
                 previous = Previous::Other;
@@ -152,10 +175,9 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
                         *atom_count = count;
                     }
                     Previous::ClosedBlock(block_start) => {
-                        for (_, atom_count) in &mut atoms[block_start..] {
-                            *atom_count = atom_count.saturating_mul(count);
-                        }
+                        multiply(&mut atoms[block_start..], count);
                     }
+                    Previous::Separator => part_multiplier = count,
                     Previous::Other => (),
                 }
 
@@ -164,11 +186,18 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
             }
             _ => {
                 debug!("leaving char: {current_char}");
-                previous = Previous::Other;
+                // Spaces between a separator and its number are allowed,
+                // e.g. `CuSO4 · 5H2O`.
+                if !(current_char.is_whitespace() && matches!(previous, Previous::Separator)) {
+                    previous = Previous::Other;
+                }
                 cursor_index += 1;
             }
         }
     }
+
+    // The last part.
+    multiply(&mut atoms[part_start..], part_multiplier);
 
     // A block not closed.
     if !open_blocks.is_empty() {

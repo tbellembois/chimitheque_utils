@@ -515,4 +515,26 @@ mod tests {
             Err(ToEmpiricalFormulaError::CanNotParseNumber(_))
         ));
     }
+
+    #[test]
+    fn test_part_multiplier() {
+        init_logger();
+
+        for (formula, expected) in [
+            ("CuSO4.5H2O", "H10CuO9S"),
+            ("CuSO4·5H2O", "H10CuO9S"),
+            ("CuSO4 · 5H2O", "H10CuO9S"),
+            ("CaCl2.2H2O.2NH3", "H10CaCl2N2O2"),
+            // A part without a number counts once; a number after a letter is ignored.
+            ("CuSO4.H2O", "H2CuO5S"),
+            ("C15H10O7 · xH2O", "C15H12O8"),
+            ("CuSO4. x5H2O", "H2CuO5S"),
+        ] {
+            assert_eq!(
+                to_empirical_formula(formula).unwrap(),
+                expected,
+                "{formula}"
+            );
+        }
+    }
 }
