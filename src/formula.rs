@@ -9,8 +9,8 @@ use std::{
 /// Why an empirical formula can not be computed from a formula.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ToEmpiricalFormulaError {
-    /// A parenthesis or bracket is closed without being opened, or is not
-    /// closed.
+    /// A parenthesis or bracket is closed without being opened, is not
+    /// closed, or is closed by the other kind, e.g. `(CH3]2`.
     UnbalancedParenthesis,
     /// An atom is not in the periodic table, e.g. `Xy`.
     UnknownAtom(String),
@@ -98,8 +98,9 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
 
     // The found atoms, with their count.
     let mut atoms: Vec<(String, usize)> = Vec::new();
-    // For each open block, the index in `atoms` of its first atom.
-    let mut open_blocks: Vec<usize> = Vec::new();
+    // For each open block, its opening char and the index in `atoms` of its
+    // first atom.
+    let mut open_blocks: Vec<(char, usize)> = Vec::new();
     // The index in `atoms` of the first atom of the current part, and the
     // number multiplying the part, e.g. `5` for the `5H2O` part of `CuSO4.5H2O`.
     let mut part_start = 0;
@@ -124,14 +125,18 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
                 cursor_index += 1;
             }
             '(' | '[' => {
-                open_blocks.push(atoms.len());
+                open_blocks.push((current_char, atoms.len()));
                 previous = Previous::Other;
                 cursor_index += 1;
             }
             ')' | ']' => {
-                let Some(block_start) = open_blocks.pop() else {
+                let expected_opening_char = if current_char == ')' { '(' } else { '[' };
+                let Some((opening_char, block_start)) = open_blocks.pop() else {
                     return Err(ToEmpiricalFormulaError::UnbalancedParenthesis);
                 };
+                if opening_char != expected_opening_char {
+                    return Err(ToEmpiricalFormulaError::UnbalancedParenthesis);
+                }
                 previous = Previous::ClosedBlock(block_start);
                 cursor_index += 1;
             }

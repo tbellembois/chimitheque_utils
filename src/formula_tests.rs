@@ -497,7 +497,9 @@ mod tests {
     fn test_unbalanced_parenthesis() {
         init_logger();
 
-        for formula in ["(CH3", "C[H3", "((CH3)2", "CH3)", "H2O)("] {
+        for formula in [
+            "(CH3", "C[H3", "((CH3)2", "CH3)", "H2O)(", "(CH3]2", "[CH3)2", "([CH3)]2",
+        ] {
             assert_eq!(
                 to_empirical_formula(formula),
                 Err(ToEmpiricalFormulaError::UnbalancedParenthesis),
