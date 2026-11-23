@@ -9,30 +9,24 @@ fn main() {
     let person_request_match = "(r.person_id == p.person_id)";
     // Admin.
     let is_admin_match = r#"(p.perm == "all" && p.item == "all" && p.entity_id == "")"#;
-    // The policy action match the request action
-    // or if the action is read the policy can be r or w or all
-    // or if the action is write or delete the policy can be w or all
-    // or if the action is all the policy must be all (redondant with the first sentence but we keep it for readability)
-    // EXCEPT for entities, rules are overwritten in rules_match.
+    // The request action, from the HTTP method: r (GET), c (POST), u (PUT) or
+    // d (DELETE). A read is given by a r, w or all permission; a create, update
+    // or delete by a w or all permission.
     let permission_equivalence_match = r#"\
         (\
         (r.action == "r" && (p.perm == "r" || p.perm == "w" || p.perm == "all")) || \
-        ((r.action == "c" || r.action == "d" || r.action == "u") && (p.perm == "w" || p.perm == "all")) || \
-        (r.action == "all" && p.perm == "all") \
+        ((r.action == "c" || r.action == "d" || r.action == "u") && (p.perm == "w" || p.perm == "all")) \
         )"#;
     // Permissions definition.
+    // Toggling a borrowing (GET /borrows/{storage id}) needs to read the storages
+    // of the entity, on purpose: the b (borrow) permission is not used yet.
+    // A manager can only be updated by an admin.
     let rules_match = r#"\
     ( (r.item == "products" && r.action == "c")                    && (p.item == "products" || p.item =="all") ) || \
     ( (r.item == "products" && r.action == "r" && r.item_id == "") && (p.item == "products" || p.item =="all") ) || \
     ( (r.item == "products" && r.action == "r" && r.item_id != "") && (p.item == "products" || p.item =="all") ) || \
     ( (r.item == "products" && r.action == "u")                    && (p.item == "products" || p.item =="all") ) || \
     ( (r.item == "products" && r.action == "d")                    && (p.item == "products" || p.item =="all") && !matchProductHasStorages(r.item_id) ) || \
-    \
-    ( (r.item == "rproducts" && r.action == "c")                    && (p.item == "rproducts" || p.item =="all") ) || \
-    ( (r.item == "rproducts" && r.action == "r" && r.item_id == "") && (p.item == "rproducts" || p.item =="all") ) || \
-    ( (r.item == "rproducts" && r.action == "r" && r.item_id != "") && (p.item == "rproducts" || p.item =="all") ) || \
-    ( (r.item == "rproducts" && r.action == "u")                    && (p.item == "rproducts" || p.item =="all") ) || \
-    ( (r.item == "rproducts" && r.action == "d")                    && (p.item == "rproducts" || p.item =="all") && !matchProductHasStorages(r.item_id) ) || \
     \
     ( (r.item == "storages" && r.action == "c")                    && (p.item == "storages" || p.item =="all") ) || \
     ( (r.item == "storages" && r.action == "r" && r.item_id == "") && (p.item == "storages" || p.item =="all") ) || \
@@ -49,7 +43,7 @@ fn main() {
     ( (r.item == "people" && r.action == "c")                    && (p.item == "entities" || p.item =="all") ) || \
     ( (r.item == "people" && r.action == "r" && r.item_id == "") && (p.item == "entities" || p.item =="all") ) || \
     ( (r.item == "people" && r.action == "r" && r.item_id != "") && (p.item == "entities" || p.item =="all") && (p.entity_id == "" || matchPersonIsInEntity(r.item_id,p.entity_id)) ) || \
-    ( (r.item == "people" && r.action == "u")                    && (r.person_id != r.item_id) && (p.item == "entities" || p.item == "all") && (p.entity_id == "" || matchPersonIsInEntity(r.item_id,p.entity_id)) && !matchPersonIsAdmin(r.item_id) ) || \
+    ( (r.item == "people" && r.action == "u")                    && (r.person_id != r.item_id) && (p.item == "entities" || p.item == "all") && (p.entity_id == "" || matchPersonIsInEntity(r.item_id,p.entity_id)) && !matchPersonIsAdmin(r.item_id) && (matchPersonIsAdmin(p.person_id) || !matchPersonIsManager(r.item_id)) ) || \
     ( (r.item == "people" && r.action == "d")                    && (r.person_id != r.item_id) && (matchPersonIsAdmin(p.person_id)) && !matchPersonIsManager(r.item_id) && !matchPersonIsAdmin(r.item_id) ) || \
     \
     ( (r.item == "entities" && r.action == "c")                    && (matchPersonIsAdmin(p.person_id)) ) || \
@@ -58,11 +52,9 @@ fn main() {
     ( (r.item == "entities" && r.action == "u")                    && (matchPersonIsAdmin(p.person_id)) ) || \
     ( (r.item == "entities" && r.action == "d")                    && (matchPersonIsAdmin(p.person_id)) && !matchEntityHasMembers(r.item_id) && !matchEntityHasStoreLocations(r.item_id) ) || \
     \
-    ( (r.item == "bookmarks" || r.item == "download" || r.item == "validate") && (p.item == "products" || p.item =="all") ) || \
+    ( (r.item == "bookmarks") && (p.item == "products" || p.item =="all") ) || \
     \
-    ( (r.item == "connecteduser" || r.item == "exportproducts") && (p.item == "products" || p.item =="all") ) || \
-    \
-    ( (r.item == "stocks" || r.item == "exportstorages") && (p.item == "storages" || p.item =="all") )"#;
+    ( (r.item == "stocks") && (p.item == "storages" || p.item =="all") )"#;
     println!(
         "m = ( {person_request_match} && ( {is_admin_match} || {permission_equivalence_match} ) && ( {rules_match} ) )"
     );
