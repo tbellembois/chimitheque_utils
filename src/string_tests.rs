@@ -51,8 +51,8 @@ mod tests {
         assert_eq!("", clean("  \t\n\r  ", Transform::Lowercase));
 
         // Test: Multiple consecutive and various whitespace characters
-        assert_eq!("a b c", clean(" \t\ra\n\nb\rc\t", Transform::None));
-        assert_eq!("A B C", clean(" \t\ra\n\nb\rc\t", Transform::Uppercase));
+        assert_eq!("a\n\nb c", clean(" \t\ra\n\nb\rc\t", Transform::None));
+        assert_eq!("A\n\nB C", clean(" \t\ra\n\nb\rc\t", Transform::Uppercase));
 
         // Test edge cases with punctuation and numbers
         assert_eq!(
@@ -77,5 +77,21 @@ mod tests {
             "a , b . c !",
             clean(" a  ,   b  .   c  ! ", Transform::None)
         );
+    }
+
+    #[test]
+    fn test_clean_keeps_line_breaks() {
+        // Each line is trimmed and its whitespaces are collapsed.
+        assert_eq!("a b\nc d", clean("  a   b  \n  c \t d  ", Transform::None));
+        // Inner empty lines are kept.
+        assert_eq!(
+            "line 1\n\nline 2",
+            clean("line 1\n  \nline 2", Transform::None)
+        );
+        // Leading and trailing empty lines are dropped.
+        assert_eq!("abc", clean("\n \n abc \n\t\n", Transform::None));
+        // `\r\n` becomes `\n`.
+        assert_eq!("a\nb", clean("a\r\nb\r\n", Transform::None));
+        assert_eq!("A\nB", clean(" a \n b ", Transform::Uppercase));
     }
 }
