@@ -1,36 +1,18 @@
-use super::*;
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    #![allow(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::too_many_lines
+    )]
+
+    use crate::smiles::*;
 
     #[test]
-    fn test_ethanol_is_valid() {
-        let valid_smiles = "CCO";
-        assert!(is_smiles(valid_smiles));
-    }
-
-    #[test]
-    fn test_emoji_is_invalid() {
-        let invalid_smiles = "😀";
-        assert!(!is_smiles(invalid_smiles));
-    }
-
-    #[test]
-    fn test_empty_string() {
-        let empty_string = "";
-        assert!(!is_smiles(empty_string));
-    }
-
-    #[test]
-    fn test_whitespace() {
-        let whitespace = "   ";
-        assert!(!is_smiles(whitespace));
-    }
-
-    #[test]
-    fn test_valid_smiles() {
+    fn test_is_smiles() {
         for smiles in [
+            "CCO",                          // ethanol
             "CC(=O)OC1=CC=CC=C1C(=O)O",     // aspirin
             "CN1C=NC2=C1C(=O)N(C(=O)N2C)C", // caffeine
             "c1ccccc1",                     // aromatic benzene
@@ -45,8 +27,12 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_smiles() {
+    fn test_is_smiles_rejects_invalid() {
         for smiles in [
+            "",     // empty
+            "   ",  // whitespace only
+            " CCO", // surrounding whitespace
+            "😀",   // emoji
             "hello world",
             "###",
             "C1CC",     // unclosed ring
@@ -55,9 +41,8 @@ mod tests {
             "CC)",      // unopened branch
             "[Xx]",     // unknown element
             "CC=",      // dangling bond
-            " CCO",     // surrounding whitespace
         ] {
-            assert!(!is_smiles(smiles), "{smiles}");
+            assert!(!is_smiles(smiles), "{smiles:?}");
         }
     }
 }

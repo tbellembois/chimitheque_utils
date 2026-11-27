@@ -14,7 +14,7 @@ mod tests {
     }
 
     #[test]
-    fn test_valid_cas_numbers() {
+    fn test_is_cas_number() {
         init_logger();
 
         let valid_cas_numbers = vec![
@@ -203,116 +203,94 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_cas_numbers() {
+    fn test_is_cas_number_errors() {
         init_logger();
 
-        let invalid_cas_numbers = vec![
+        assert_eq!(is_cas_number(""), Err(CasNumberError::EmptyCasNumber));
+
+        for cas_number in [
+            "            ",  // Whitespace only
             "0-0-0",         // First group too short
-            "0000000-0-0",   // First group too long
+            "1-23-4",        // First group too short
+            "12345678-89-0", // First group too long (8 digits)
             "00-0-0",        // Second group too short
-            "00000-0-0",     // Second group too long
-            "000-0-00",      // Check digit too long
+            "00000-0-0",     // Second group too short
+            "123-4-5",       // Second group too short
+            "123-456-7",     // Second group too long
             "000-0",         // Missing check digit
-            "123-ABC-5",     // Non-numeric characters in groups
             "123-45-",       // Missing check digit
-            "@@2-34-5",      // Invalid characters
             "12-34-56",      // Check digit too long
+            "999-99-98",     // Check digit too long
             "123-45-678",    // Check digit too long
-            "123-A5-7",      // Non-numeric character in group
-            "123-4B-5",      // Non-numeric character in group
-            "12345678-89-0", // First group too long (7 digits)
-            "123456-78-90",  // Check digit too long (2 digits)
-            "ABC-12345-6",   // Non-numeric characters in first group
-            "12-ABC34-5",    // Non-numeric characters in second group
-            "123-45-A",      // Non-numeric character as check digit
-            "000-00-0",      // All zeros
-            "123-A5-7",      // Letter in group2
-            "A23-45-6",      // Letter in group1
+            "123-ABC-5",     // Letters in the second group
+            "A23-45-6",      // Letter in the first group
+            "123-4b-6",      // Letter in the second group
             "123-45-A",      // Letter as check digit
-            "123-X5-6",      // Letter in group2
-            "S23-45-6",      // Letter in group1
-            "123-4X-6",      // Letter in group2
-            "123-45-S",      // Letter as check digit
-            "1!3-45-6",      // Special character in group1
-            "123-4#-6",      // Special character in group2
-            "123-45-@",      // Special character as check digit
-            "123-€5-6",      // Special character in group2
-            "¢23-45-6",      // Currency symbol in group1
-            "123-4¢-6",      // Currency symbol in group2
-            "123-45-¢",      // Currency symbol as check digit
+            "1!3-45-6",      // Special char in the first group
+            "123-4#-6",      // Special char in the second group
+            "123-45-@",      // Special char as check digit
+            "¢23-45-6",      // Currency symbol in the first group
             "100-٠٠-٥",      // Arabic-Indic digits
             "100-𝟎𝟎-𝟕",      // Mathematical bold digits
             "100-⁰⁰-⁵",      // Superscript digits
             "100-⁰⁰-₅",      // Subscript digits
-            "100-ℵℵ-ℵ",      // Hebrew aleph symbols (should fail)
-            "100-ⰀⰀ-Ⰰ",      // Glagolitic letters (should fail)
-            "100-℁℁-℁",      // Latin extended symbols (should fail)
-            "100-一一-一",   // CJK unified ideographs (should fail)
-            "100-☀☀-☀",      // Miscellaneous symbols (should fail)
-            "100-ℂℂ-ℂ",      // Double-struck letters (should fail)
-            "",              // Empty string
-            "            ",  // Whitespace string
-            "1337-420-69",   // Pop culture reference - likely invalid
-            "999-99-98",     // Check digit should be 9 (based on the checksum)
-            "111-11-10",     // Check digit should be 1 (based on the checksum)
-            "123-45-678",    // Check digit too long
-            "000-00-1",      // All zeros except check digit - likely invalid
-            "999-99-0",      // Check digit should be 9 (based on the checksum)
-            "123-456-7",     // Second group too long
-            "12345678-9-0",  // First group too long
-            "1-23-4",        // First group too short
-            "12-3-4",        // First group too short
-            "123-4-5",       // Second group too short
-            "123-45-",       // Missing check digit
-            "123-45-gh",     // Non-numeric check digit
-            "123-4a-5",      // Non-numeric character in group2
-            "12a-45-6",      // Non-numeric character in group1
-            "123 45-6",      // Whitespace instead of hyphen
+            "100-一一-一",   // CJK ideographs
+            "123 45-6",      // Space instead of a dash
             "123-45-6 ",     // Trailing whitespace
             " 123-45-6",     // Leading whitespace
-            "123-45-6\n",    // Newline character
-        ];
-
-        for cas_number in invalid_cas_numbers {
-            assert!(is_cas_number(cas_number).is_err(), "-> error {cas_number}");
+            "123-45-6\n",    // Trailing newline
+        ] {
+            assert_eq!(
+                is_cas_number(cas_number),
+                Err(CasNumberError::DigitGroupsCapture),
+                "{cas_number:?}"
+            );
         }
 
-        // All zeros
+        // All the digits before the check digit are zeros, whatever the check
+        // digit.
+        for cas_number in ["000-00-0", "000-00-1", "0000000-00-0"] {
+            assert_eq!(
+                is_cas_number(cas_number),
+                Err(CasNumberError::AllZeros),
+                "{cas_number}"
+            );
+        }
+
+        for cas_number in [
+            "7732-18-4", // Water is 7732-18-5
+            "999-99-0",  // Should be 5
+            "100-00-6",  // Should be 5
+            "123-45-6",  // Should be 5
+        ] {
+            assert_eq!(
+                is_cas_number(cas_number),
+                Err(CasNumberError::CheckDigitDoesNotMatch),
+                "{cas_number}"
+            );
+        }
     }
 
     #[test]
-    fn test_format_empty_cas_number_error() {
-        let error = CasNumberError::EmptyCasNumber;
-        assert_eq!(error.to_string(), "empty CAS number");
-    }
-
-    #[test]
-    fn test_format_digit_groups_capture_error() {
-        let error = CasNumberError::DigitGroupsCapture;
-        assert_eq!(error.to_string(), "can not capture digit groups");
-    }
-
-    #[test]
-    fn test_format_char_to_digit_conversion_error() {
-        let error = CasNumberError::CharToDigitConversion('a');
-        assert_eq!(error.to_string(), "can not convert a into digit");
-    }
-
-    #[test]
-    fn test_format_no_check_digit_found_error() {
-        let error = CasNumberError::NoCheckDigitFound;
-        assert_eq!(error.to_string(), "no check digit found");
-    }
-
-    #[test]
-    fn test_format_check_digit_does_not_match_error() {
-        let error = CasNumberError::CheckDigitDoesNotMatch;
-        assert_eq!(error.to_string(), "check digit does not match");
-    }
-
-    #[test]
-    fn test_format_all_zeros_error() {
-        let error = CasNumberError::AllZeros;
-        assert_eq!(error.to_string(), "all zeros");
+    fn test_display() {
+        for (error, message) in [
+            (CasNumberError::EmptyCasNumber, "empty CAS number"),
+            (
+                CasNumberError::DigitGroupsCapture,
+                "can not capture digit groups",
+            ),
+            (
+                CasNumberError::CharToDigitConversion('a'),
+                "can not convert a into digit",
+            ),
+            (CasNumberError::NoCheckDigitFound, "no check digit found"),
+            (
+                CasNumberError::CheckDigitDoesNotMatch,
+                "check digit does not match",
+            ),
+            (CasNumberError::AllZeros, "all zeros"),
+        ] {
+            assert_eq!(error.to_string(), message);
+        }
     }
 }

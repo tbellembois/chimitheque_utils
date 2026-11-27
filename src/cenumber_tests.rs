@@ -14,7 +14,7 @@ mod tests {
     }
 
     #[test]
-    fn test_valid_ce_numbers() {
+    fn test_is_ce_number() {
         init_logger();
 
         let valid_ce_numbers = vec![
@@ -153,93 +153,84 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_ce_numbers() {
+    fn test_is_ce_number_errors() {
         init_logger();
 
-        let invalid_ce_numbers = vec![
-            "0-0-0",            // First group too short
-            "0000-0-0",         // First group too long
-            "0-0-0",            // Second group too short (first part)
-            "000-000-0",        // Second group too long
-            "000-0-0",          // Check digit too short
-            "000-00-00",        // Check digit too long
-            "123-ABC-5",        // Non-numeric characters
-            "123-45-",          // Missing check digit
-            "@/장으로#$%^&*()", // Invalid characters
-            "12-34-56",         // Check digit too long
-            "123-45-678",       // Check digit too long
-            "123-A5-7",         // Non-numeric characters
-            "123-4B-5",         // Non-numeric characters
-            "1234567-89-0",     // First group too long
-            "123456-789-0",     // Second group too long
-            "123-45678-0",      // Second group too long
-            "ABC-12345-6",      // Non-numeric characters
-            "12-ABC34-5",       // Non-numeric characters
-            "123-45-A",         // Non-numeric check digit
-            "000-00-1",         // Valid but really weird case
-            "123-45-5",         // Forced invalid checksum (actual check digit should be 7)
-            "246-824-3",        // Forced invalid checksum (actual check digit should be 2)
-            "12-3-456",         // Incorrect separators
-            "12A-45B-6C",       // Mixed alphanumeric
-            "123-456",          // Missing separator
-            "123-45-6-7",       // Extra group
-            " ",                // Whitespace
+        assert_eq!(is_ce_number(""), Err(CeNumberError::EmptyCeNumber));
+
+        for ce_number in [
+            " ",                // Whitespace only
             "\t",               // Tab
             "\n",               // Newline
-            "\r",               // Carriage return
-            "123 45-6",         // Space instead of separator
-            " 123-45-6",        // Leading whitespace
-            "123-45-6 ",        // Trailing whitespace
-            "123€456€7",        // ⬇︎ wrong separator for number, €⬆︎
-            "123⚡456⚡7",      // ⬇︎ wrong separator for number, ⚡⬆︎
-            "123☠456☠7",        // ⬇︎ wrong separator for number, ☠⬆︎
-            "123❗456❗7",      // ⬇︎ wrong separator for number, ❗⬆︎
-            "123❓456❓7",      // ⬇︎ wrong separator for number, ❓⬆︎
-            "123⚠456⚠7",        // ⬇︎ wrong separator for number, ⚠⬆︎
-            "123❕456❕7",      // ⬇︎ wrong separator for number, ❕⬆︎
-            "123❗456❗7",      // ⬇︎ wrong separator for number, ❗⬆︎
-            "123❕456❕7",      // ⬇︎ wrong separator for number, ❕⬆︎
-            "123⚕456⚕7",        // ⬇︎ wrong separator for number, ⚕⬆︎
-        ];
+            "0-0-0",            // Groups too short
+            "0000-000-0",       // First group too long
+            "12-345-6",         // First group too short
+            "123-45-6",         // Second group too short
+            "123-4567-8",       // Second group too long
+            "123-456-",         // Missing check digit
+            "123-456-78",       // Check digit too long
+            "123-456",          // Missing group
+            "123-456-7-8",      // Extra group
+            "123-ABC-5",        // Letters in the second group
+            "12A-456-7",        // Letter in the first group
+            "123-456-A",        // Letter as check digit
+            "@/장으로#$%^&*()", // Invalid chars
+            "123 456-7",        // Space instead of a dash
+            " 123-456-7",       // Leading whitespace
+            "123-456-7 ",       // Trailing whitespace
+            "123€456€7",        // Wrong separator
+            "123⚠456⚠7",        // Wrong separator
+        ] {
+            assert_eq!(
+                is_ce_number(ce_number),
+                Err(CeNumberError::DigitGroupsCapture),
+                "{ce_number:?}"
+            );
+        }
 
-        for ce_number in invalid_ce_numbers {
-            assert!(is_ce_number(ce_number).is_err(), "-> error {ce_number}");
+        // All the digits before the check digit are zeros, whatever the check
+        // digit.
+        for ce_number in ["000-000-0", "000-000-1"] {
+            assert_eq!(
+                is_ce_number(ce_number),
+                Err(CeNumberError::AllZeros),
+                "{ce_number}"
+            );
+        }
+
+        for ce_number in [
+            "214-480-5", // Should be 6
+            "246-824-3", // Should be 6
+            "123-456-7", // Should be 3
+        ] {
+            assert_eq!(
+                is_ce_number(ce_number),
+                Err(CeNumberError::CheckDigitDoesNotMatch),
+                "{ce_number}"
+            );
         }
     }
 
     #[test]
-    fn test_format_empty_ce_number_error() {
-        let error = CeNumberError::EmptyCeNumber;
-        assert_eq!(error.to_string(), "empty CE number");
-    }
-
-    #[test]
-    fn test_format_digit_groups_capture_error() {
-        let error = CeNumberError::DigitGroupsCapture;
-        assert_eq!(error.to_string(), "can not capture digit groups");
-    }
-
-    #[test]
-    fn test_format_char_to_digit_conversion_error() {
-        let error = CeNumberError::CharToDigitConversion('a');
-        assert_eq!(error.to_string(), "can not convert a into digit");
-    }
-
-    #[test]
-    fn test_format_no_check_digit_found_error() {
-        let error = CeNumberError::NoCheckDigitFound;
-        assert_eq!(error.to_string(), "no check digit found");
-    }
-
-    #[test]
-    fn test_format_check_digit_does_not_match_error() {
-        let error = CeNumberError::CheckDigitDoesNotMatch;
-        assert_eq!(error.to_string(), "check digit does not match");
-    }
-
-    #[test]
-    fn test_format_all_zeros_error() {
-        let error = CeNumberError::AllZeros;
-        assert_eq!(error.to_string(), "all zeros");
+    fn test_display() {
+        for (error, message) in [
+            (CeNumberError::EmptyCeNumber, "empty CE number"),
+            (
+                CeNumberError::DigitGroupsCapture,
+                "can not capture digit groups",
+            ),
+            (
+                CeNumberError::CharToDigitConversion('a'),
+                "can not convert a into digit",
+            ),
+            (CeNumberError::NoCheckDigitFound, "no check digit found"),
+            (
+                CeNumberError::CheckDigitDoesNotMatch,
+                "check digit does not match",
+            ),
+            (CeNumberError::AllZeros, "all zeros"),
+        ] {
+            assert_eq!(error.to_string(), message);
+        }
     }
 }
