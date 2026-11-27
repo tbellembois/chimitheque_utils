@@ -1,4 +1,4 @@
-/// A case change applied by [`clean`].
+/// A case change applied by [`clean_required_text`].
 #[derive(Copy, Clone)]
 pub enum Transform {
     /// Keeps the case.
@@ -14,8 +14,11 @@ pub enum Transform {
 /// except at the start and the end of the string. `\r\n` line breaks become
 /// `\n`.
 /// Optionally, it can convert the string to uppercase or lowercase.
+///
+/// Private: other crates call [`clean_required_text`] or
+/// [`clean_optional_text`], which also handle an empty result.
 #[must_use]
-pub fn clean(s: &str, transform: Transform) -> String {
+fn clean(s: &str, transform: Transform) -> String {
     // `split_whitespace` drops the leading and trailing whitespaces of each
     // line; `lines` also removes the `\r` of `\r\n`.
     let lines: Vec<String> = s
@@ -41,17 +44,21 @@ pub fn clean(s: &str, transform: Transform) -> String {
     }
 }
 
-/// Cleans a required text with [`clean`].
+/// Cleans a required text and returns it, or `None` if the cleaned text is
+/// empty.
 ///
-/// Returns `None` if the cleaned text is empty.
+/// Each line is trimmed and its multiple whitespaces are replaced with a
+/// single space. Line breaks are kept, except at the start and the end of the
+/// text, and `\r\n` becomes `\n`. `transform` can also convert the text to
+/// uppercase or lowercase.
 #[must_use]
 pub fn clean_required_text(s: &str, transform: Transform) -> Option<String> {
     let cleaned = clean(s, transform);
     (!cleaned.is_empty()).then_some(cleaned)
 }
 
-/// Cleans an optional text in place with [`clean`], keeping its case.
-/// An empty text becomes `None`.
+/// Cleans an optional text in place like [`clean_required_text`], keeping its
+/// case. An empty text becomes `None`.
 pub fn clean_optional_text(value: &mut Option<String>) {
     *value = value
         .as_deref()
