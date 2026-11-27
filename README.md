@@ -6,7 +6,7 @@ Utilities of [Chimithèque](https://github.com/tbellembois/chimitheque_back), a 
 - `formula`: empirical formula of a formula, in the Hill order, e.g. `C2H6O` for `CH3CH2OH` or `CuH10O9S` for `CuSO4.5H2O`.
 - `inchi`: `InChI` and `InChIKey` format checks.
 - `smiles`: SMILES syntax check, following the OpenSMILES grammar.
-- `string`: string cleaning (whitespaces and case).
+- `string`: text cleaning: each line is trimmed and its whitespaces collapsed, line breaks are kept, and the case can be changed. `clean_required_text` returns `None` for an empty text, and `clean_optional_text` turns an empty text into `None`.
 
 ## Casbin matcher
 
