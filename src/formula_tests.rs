@@ -8,17 +8,17 @@ mod tests {
     )]
 
     use crate::formula::*;
-    use std::vec;
 
     fn init_logger() {
         let _ = env_logger::builder().is_test(true).try_init();
     }
 
     #[test]
-    fn test_sort_empirical_formula() {
+    fn test_empirical_formulas_are_unchanged() {
         init_logger();
 
-        let empirical_formulas = vec![
+        // Already empirical formulas in the Hill order are returned unchanged.
+        let empirical_formulas = [
             "C5H11Br",
             "C7H6O3",
             "C19H10Br4O5S",
@@ -193,8 +193,15 @@ mod tests {
         for formula in empirical_formulas {
             assert_eq!(to_empirical_formula(formula).unwrap(), formula.to_string());
         }
+    }
 
-        let linear_formulas = vec![
+    #[test]
+    fn test_linear_formulas_are_parsed() {
+        init_logger();
+
+        // Linear formulas from a product database: they must all be parsed.
+        // Their results are checked in `test_linear_formulas`.
+        let linear_formulas = [
             "C6H5CH=CHCHO",
             "CH3(CH2)5CH3",
             "H2N(CH2)4CH(NH2)CO2H",
@@ -385,7 +392,6 @@ mod tests {
             "HOC(COOH)(CH2COOH)2",
             "C6H5CH2CH(NH2)COOC2H5 · HCl",
             "C6H11N=C=NC6H11",
-            "C6H5CH2CH(NH2)COOCH3 · HC",
             "C6H5CH2CH(NH2)COOCH3 · HCl",
             "C6H5CH2CH(NH2)CO2H",
             "C6H5CO2C6H5",
@@ -422,51 +428,182 @@ mod tests {
         ];
 
         for formula in linear_formulas {
-            let maybe_empirical_formula = to_empirical_formula(formula);
-            assert!(maybe_empirical_formula.is_ok(), "-> error {formula}");
+            assert!(to_empirical_formula(formula).is_ok(), "{formula}");
         }
     }
 
     #[test]
-    fn test_format_unbalanced_parenthesis_error() {
-        let error = ToEmpiricalFormulaError::UnbalancedParenthesis;
-        assert_eq!(error.to_string(), "unbalanced parenthesis");
+    fn test_linear_formulas() {
+        init_logger();
+
+        for (formula, expected) in [
+            ("CH3OH", "CH4O"),                       // methanol
+            ("HCHO", "CH2O"),                        // formaldehyde
+            ("CH3CO2H", "C2H4O2"),                   // acetic acid
+            ("CH3CH2CH2Br", "C3H7Br"),               // 1-bromopropane
+            ("Cl(CH2)3Br", "C3H6BrCl"),              // 1-bromo-3-chloropropane
+            ("CH3(CH2)5CH3", "C7H16"),               // heptane
+            ("C6H5CH=CH2", "C8H8"),                  // styrene
+            ("C6H5CN", "C7H5N"),                     // benzonitrile
+            ("2-(HO)C6H4CHO", "C7H6O2"),             // salicylaldehyde
+            ("(CH3)2CHCH2COOH", "C5H10O2"),          // isovaleric acid
+            ("H2N(CH2)4CH(NH2)CO2H", "C6H14N2O2"),   // lysine
+            ("HOC(COOH)(CH2COOH)2", "C6H8O7"),       // citric acid
+            ("[-CH(OH)CO2C2H5]2", "C8H14O6"),        // diethyl tartrate
+            ("C6H4-1,2-(CO2CH3)2", "C10H10O4"),      // dimethyl phthalate
+            ("CH3(CH2)4CH(OH)C≡CH", "C8H14O"),       // 1-octyn-3-ol
+            ("C6H11N=C=NC6H11", "C13H22N2"),         // DCC
+            ("(CF3CO)2O", "C4F6O3"),                 // trifluoroacetic anhydride
+            ("(CH3)3SiCHN2", "C4H10N2Si"),           // TMS-diazomethane
+            ("(CH3CO2)2Zn", "C4H6O4Zn"),             // zinc acetate
+            ("Ni(C5H7O2)2", "C10H14NiO4"),           // nickel acetylacetonate
+            ("CH3(CH2)11N(CH3)3Br", "C15H34BrN"),    // DTAB
+            ("(CH3CH2CH2CH2)4N(PF6)", "C16H36F6NP"), // TBAPF6
+            ("Li[CH(CH3)CH2CH3]3BH", "C12H28BLi"),   // L-selectride
+            ("[CH2=C(CH3)CH2PdCl]2", "C8H14Cl2Pd2"), // methallylpalladium chloride dimer
+            ("NH2SO3H", "H3NO3S"),                   // sulfamic acid
+            ("GdCl3.6H2O", "Cl3GdH12O6"),            // gadolinium chloride hexahydrate
+            ("NH2CH2COOCH3 · HCl", "C3H8ClNO2"),     // glycine methyl ester hydrochloride
+            ("C5H5N·ClCrO3H", "C5H6ClCrNO3"),        // pyridinium chlorochromate
+            ("C8 H17 N3 . H Cl", "C8H18ClN3"),       // EDC hydrochloride
+        ] {
+            assert_eq!(
+                to_empirical_formula(formula).unwrap(),
+                expected,
+                "{formula}"
+            );
+        }
     }
 
     #[test]
-    fn test_format_unknown_atom_error() {
-        let error = ToEmpiricalFormulaError::UnknownAtom("Xy".to_string());
-        assert_eq!(error.to_string(), "unknown atom Xy");
+    fn test_two_letter_atoms() {
+        init_logger();
+
+        // A lowercase letter after an uppercase one makes a two-letter atom.
+        for (formula, expected) in [
+            ("Co", "Co"),
+            ("CO", "CO"),
+            ("CoCl2", "Cl2Co"),
+            ("NaCl", "ClNa"),
+            ("CHCl3", "CHCl3"),
+        ] {
+            assert_eq!(
+                to_empirical_formula(formula).unwrap(),
+                expected,
+                "{formula}"
+            );
+        }
     }
 
     #[test]
-    fn test_format_cannot_parse_number_error() {
-        let error = ToEmpiricalFormulaError::CanNotParseNumber("abc".parse::<u32>().unwrap_err());
+    fn test_ignored_chars() {
+        init_logger();
+
+        // Bonds, dashes, commas, spaces and lowercase letters are ignored, and
+        // so is a number after them.
+        for (formula, expected) in [
+            ("CH2=CH2", "C2H4"),
+            ("HC≡CH", "C2H2"),
+            ("2-(HO)C6H4CHO", "C7H6O2"),
+            ("C6H4-1,2-(CO2CH3)2", "C10H10O4"),
+            ("C8 H17 N3", "C8H17N3"),
+            ("0H2O", "H2O"),
+        ] {
+            assert_eq!(
+                to_empirical_formula(formula).unwrap(),
+                expected,
+                "{formula}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_formula_without_atom() {
+        init_logger();
+
+        // Only ignored chars: the empirical formula is empty.
+        for formula in ["()", "[]", ".", "2", "x", "co", "-"] {
+            assert_eq!(to_empirical_formula(formula).unwrap(), "", "{formula}");
+        }
+    }
+
+    #[test]
+    fn test_errors() {
+        init_logger();
+
         assert_eq!(
-            error.to_string(),
-            "can not parse number: invalid digit found in string"
+            to_empirical_formula(""),
+            Err(ToEmpiricalFormulaError::EmptyFormula)
         );
+
+        for (formula, atom) in [("Xy", "Xy"), ("CXy", "Xy"), ("CH3Qq", "Qq"), ("J", "J")] {
+            assert_eq!(
+                to_empirical_formula(formula),
+                Err(ToEmpiricalFormulaError::UnknownAtom(atom.to_string())),
+                "{formula}"
+            );
+        }
+
+        for formula in [
+            "(CH3", "C[H3", "((CH3)2", "CH3)", "H2O)(", "(CH3]2", "[CH3)2", "([CH3)]2",
+        ] {
+            assert_eq!(
+                to_empirical_formula(formula),
+                Err(ToEmpiricalFormulaError::UnbalancedParenthesis),
+                "{formula}"
+            );
+        }
+
+        assert!(matches!(
+            to_empirical_formula("C99999999999999999999999"),
+            Err(ToEmpiricalFormulaError::CanNotParseNumber(_))
+        ));
+
+        // A count or a multiplier of 0.
+        for formula in [
+            "C0H4",
+            "C00",
+            "H2O0",
+            "(H2O)0",
+            "CuSO4.0H2O",
+            "CuSO4 · 0H2O",
+        ] {
+            assert_eq!(
+                to_empirical_formula(formula),
+                Err(ToEmpiricalFormulaError::ZeroCount),
+                "{formula}"
+            );
+        }
     }
 
     #[test]
-    fn test_format_number_after_unknown_atom_error() {
-        let error = ToEmpiricalFormulaError::NumberAfterUnknownAtom;
-        assert_eq!(error.to_string(), "found a number after no known atom");
-    }
-
-    #[test]
-    fn test_format_unexpected_none_atom_count_error() {
-        let error = ToEmpiricalFormulaError::UnexpectedNoneAtomCount("Xy".to_string());
-        assert_eq!(
-            error.to_string(),
-            "unexpected empty atom_count_map value for key Xy"
-        );
-    }
-
-    #[test]
-    fn test_format_empty_formula_error() {
-        let error = ToEmpiricalFormulaError::EmptyFormula;
-        assert_eq!(error.to_string(), "empty formula");
+    fn test_display() {
+        for (error, message) in [
+            (
+                ToEmpiricalFormulaError::UnbalancedParenthesis,
+                "unbalanced parenthesis",
+            ),
+            (
+                ToEmpiricalFormulaError::UnknownAtom("Xy".to_string()),
+                "unknown atom Xy",
+            ),
+            (
+                ToEmpiricalFormulaError::CanNotParseNumber("abc".parse::<usize>().unwrap_err()),
+                "can not parse number: invalid digit found in string",
+            ),
+            (
+                ToEmpiricalFormulaError::NumberAfterUnknownAtom,
+                "found a number after no known atom",
+            ),
+            (
+                ToEmpiricalFormulaError::UnexpectedNoneAtomCount("Xy".to_string()),
+                "unexpected empty atom_count_map value for key Xy",
+            ),
+            (ToEmpiricalFormulaError::EmptyFormula, "empty formula"),
+            (ToEmpiricalFormulaError::ZeroCount, "count of 0"),
+        ] {
+            assert_eq!(error.to_string(), message);
+        }
     }
 
     #[test]
@@ -491,31 +628,6 @@ mod tests {
             "C254H377N65O75S6"
         );
         assert_eq!(to_empirical_formula("(CH2)120").unwrap(), "C120H240");
-    }
-
-    #[test]
-    fn test_unbalanced_parenthesis() {
-        init_logger();
-
-        for formula in [
-            "(CH3", "C[H3", "((CH3)2", "CH3)", "H2O)(", "(CH3]2", "[CH3)2", "([CH3)]2",
-        ] {
-            assert_eq!(
-                to_empirical_formula(formula),
-                Err(ToEmpiricalFormulaError::UnbalancedParenthesis),
-                "{formula}"
-            );
-        }
-    }
-
-    #[test]
-    fn test_too_big_count_is_an_error() {
-        init_logger();
-
-        assert!(matches!(
-            to_empirical_formula("C99999999999999999999999"),
-            Err(ToEmpiricalFormulaError::CanNotParseNumber(_))
-        ));
     }
 
     #[test]

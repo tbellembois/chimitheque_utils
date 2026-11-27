@@ -23,6 +23,8 @@ pub enum ToEmpiricalFormulaError {
     UnexpectedNoneAtomCount(String),
     /// The formula is empty.
     EmptyFormula,
+    /// A count or a multiplier is 0, e.g. `C0H4` or `(H2O)0`.
+    ZeroCount,
 }
 
 impl Display for ToEmpiricalFormulaError {
@@ -40,6 +42,7 @@ impl Display for ToEmpiricalFormulaError {
                 write!(f, "unexpected empty atom_count_map value for key {s}")
             }
             ToEmpiricalFormulaError::EmptyFormula => write!(f, "empty formula"),
+            ToEmpiricalFormulaError::ZeroCount => write!(f, "count of 0"),
         }
     }
 }
@@ -54,7 +57,7 @@ impl std::error::Error for ToEmpiricalFormulaError {}
 /// an atom or a closing parenthesis or bracket multiplies it. A number at the
 /// start of a part after a `.` or `·` multiplies the whole part, as in `PubChem`,
 /// e.g. `CuSO4.5H2O` gives `CuH10O9S`. Other chars are ignored, and so is a
-/// number after them.
+/// number after them. A count or a multiplier of 0 is an error.
 ///
 /// Example of parsing method:
 /// Cl(CaC2(NaCl)3)2.Na=P
@@ -173,6 +176,11 @@ pub fn to_empirical_formula(formula: &str) -> Result<String, ToEmpiricalFormulaE
                     .parse::<usize>()
                     .map_err(ToEmpiricalFormulaError::CanNotParseNumber)?;
                 debug!("count: {count}");
+
+                // A count of 0 would remove the atom, the block or the part.
+                if count == 0 && !matches!(previous, Previous::Other) {
+                    return Err(ToEmpiricalFormulaError::ZeroCount);
+                }
 
                 match previous {
                     Previous::Atom => {
