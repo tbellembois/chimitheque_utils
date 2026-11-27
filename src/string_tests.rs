@@ -7,7 +7,7 @@ mod tests {
         clippy::too_many_lines
     )]
 
-    use crate::string::{Transform, clean};
+    use crate::string::{Transform, clean, clean_optional_text, clean_required_text};
 
     #[test]
     fn test_clean() {
@@ -93,5 +93,45 @@ mod tests {
         // `\r\n` becomes `\n`.
         assert_eq!("a\nb", clean("a\r\nb\r\n", Transform::None));
         assert_eq!("A\nB", clean(" a \n b ", Transform::Uppercase));
+    }
+
+    #[test]
+    fn test_clean_required_text() {
+        assert_eq!(
+            clean_required_text("  a   b ", Transform::None).as_deref(),
+            Some("a b")
+        );
+        assert_eq!(
+            clean_required_text("ab", Transform::Uppercase).as_deref(),
+            Some("AB")
+        );
+        for empty in ["", "   ", "\n\t"] {
+            assert_eq!(clean_required_text(empty, Transform::None), None);
+        }
+    }
+
+    #[test]
+    fn test_clean_optional_text() {
+        let mut value = Some("  a   b ".to_string());
+        clean_optional_text(&mut value);
+        assert_eq!(value.as_deref(), Some("a b"));
+
+        // The case is kept.
+        let mut value = Some("Ab".to_string());
+        clean_optional_text(&mut value);
+        assert_eq!(value.as_deref(), Some("Ab"));
+
+        for empty in [Some(String::new()), Some("  \n ".to_string()), None] {
+            let mut value = empty;
+            clean_optional_text(&mut value);
+            assert_eq!(value, None);
+        }
+    }
+
+    #[test]
+    fn test_clean_optional_text_keeps_line_breaks() {
+        let mut value = Some("  line 1\n\n  line 2  ".to_string());
+        clean_optional_text(&mut value);
+        assert_eq!(value.as_deref(), Some("line 1\n\nline 2"));
     }
 }

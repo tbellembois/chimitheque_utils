@@ -41,6 +41,23 @@ pub fn clean(s: &str, transform: Transform) -> String {
     }
 }
 
+/// Cleans a required text with [`clean`].
+///
+/// Returns `None` if the cleaned text is empty.
+#[must_use]
+pub fn clean_required_text(s: &str, transform: Transform) -> Option<String> {
+    let cleaned = clean(s, transform);
+    (!cleaned.is_empty()).then_some(cleaned)
+}
+
+/// Cleans an optional text in place with [`clean`], keeping its case.
+/// An empty text becomes `None`.
+pub fn clean_optional_text(value: &mut Option<String>) {
+    *value = value
+        .as_deref()
+        .and_then(|text| clean_required_text(text, Transform::None));
+}
+
 #[cfg(test)]
 #[path = "string_tests.rs"]
 mod string_tests;
